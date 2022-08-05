@@ -1,7 +1,7 @@
 #pragma once
 #include "utils.h"
 
-enum TOKEN_TYPE {
+enum TokenType {
     T_ERROR,
     T_NEWLINE,
     T_NUM_LIT,
@@ -13,13 +13,14 @@ enum TOKEN_TYPE {
 };
 
 typedef struct {
-    enum TOKEN_TYPE type;
+    enum TokenType type;
     char* str;
     int pos;
-    char* filename;
 } Token;
 
-Token next_token(char** strptr);
-string token_pretty_print(Token* t);
+Token token_next(char* str, int* index);
+vector tokens_all(char* str);
+void tokens_free(vector* v);
 
-void print_tokens(char* str);
+string tokens_print(vector* v);
+string token_print(Token* t);

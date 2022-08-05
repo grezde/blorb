@@ -8,7 +8,6 @@ typedef struct {
     char* cstr;
 } string;
 
-/*
 typedef struct {
     int length;
     int buff_size;
@@ -20,7 +19,7 @@ vector vector_new(int elem_size);
 void vector_allocate(vector* vec, int length);
 void vector_free(vector* vec);
 void vector_push(vector* vec, void* elem);
-*/
+void* vector_item(const vector* vec, int index);
 
 string string_new();
 string string_from_lit(const char* s);

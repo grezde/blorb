@@ -81,3 +81,48 @@ void string_pushs(string* str, const char* s) {
     strcpy(str->cstr + str->length, s);
     str->length += l;
 }
+
+vector vector_new(int elem_size) {
+    vector v;
+    v.length = 0;
+    v.elem_size = elem_size;
+    v.buff_size = 1;
+    v.carr = malloc(elem_size);
+    memset(v.carr, 0, elem_size);
+    return v;
+}
+
+void vector_allocate(vector* vec, int length) {
+    if(vec->length + length <= vec->buff_size)
+        return;
+    int buff_size = vec->buff_size;
+    while(buff_size < vec->length + length)
+        buff_size *= 2;
+    void* newarr = malloc(buff_size * vec->elem_size);
+    memcpy(newarr, vec->carr, vec->length * vec->elem_size);
+    memset(newarr + vec->length * vec->elem_size, 0, (buff_size - vec->length) * vec->elem_size);
+    free(vec->carr);
+    vec->carr = newarr;
+    vec->buff_size = buff_size;
+}
+
+void vector_push(vector* vec, void* elem) {
+    if(vec->length == vec->buff_size) {
+        void* newarr = malloc(2 * vec->buff_size * vec->elem_size);
+        memcpy(newarr, vec->carr, vec->buff_size * vec->elem_size);
+        memset(newarr + vec->buff_size * vec->elem_size, 0, vec->buff_size * vec->elem_size);
+        free(vec->carr);
+        vec->buff_size *= 2;
+        vec->carr = newarr;
+    }
+    memcpy(vec->carr + vec->length * vec->elem_size, elem, vec->elem_size);
+    vec->length++;
+}
+
+void* vector_item(const vector* vec, int index) {
+    return vec->carr + index * vec->elem_size;
+}
+
+void vector_free(vector* vec) {
+    free(vec->carr);
+}

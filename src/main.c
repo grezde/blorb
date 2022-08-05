@@ -1,6 +1,11 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include "utils.h"
 #include "lexer.h"
+#include "parser.h"
+
+static bool show_tokens = false;
+static bool show_syntax = true;
 
 int main(int argc, char** argv) {
     
@@ -20,7 +25,22 @@ int main(int argc, char** argv) {
         return 1;
     }
     
-    printf("> FILE %s:\n%s\n", argv[1], cnts);
-    print_tokens(cnts);
+    vector v = tokens_all(cnts);
+    int i=0;
+    SyntaxNode* sn = syntax_parse_sum(&v, &i);
+
+    if(show_tokens) {
+        string s = tokens_print(&v);
+        printf("%s", s.cstr);
+        string_free(&s);
+    }
+    if(show_syntax) {
+        string s = syntax_print_tree(sn);
+        printf("%s", s.cstr);
+        string_free(&s);
+    }
+
+    syntax_free_node(sn);
+    tokens_free(&v);
     return 0;
 }
