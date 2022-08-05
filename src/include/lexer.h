@@ -10,6 +10,8 @@ enum TokenType {
     T_STAR,
     T_DIV,
     T_EOF,
+    T_O_PAREN,
+    T_C_PAREN
 };
 
 typedef struct {

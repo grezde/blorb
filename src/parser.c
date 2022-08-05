@@ -19,7 +19,8 @@ SyntaxNode* syntax_new_node(enum SyntaxNodeType type, Token token) {
 
 void syntax_node_add_child(SyntaxNode* sn, SyntaxNode* child) {
     vector_push(&(sn->child_nodes), child);
-    free(child);
+    if(child != NULL) //remove this line !
+        free(child);
 }
 
 static void syntax_free_node_recursive(SyntaxNode* sn) {
@@ -73,7 +74,6 @@ string syntax_print_tree(SyntaxNode* sn) {
 // PARSING
 // --------
 
-const int MAX_PRECEDENCE = 3;
 int syntax_op_precedence(enum TokenType tt) {
     switch(tt) {
         case T_PLUS: case T_MINUS:
@@ -104,54 +104,91 @@ SyntaxNode* syntax_parse_number(vector* tokens, int* index) {
     return syntax_try_parse(tokens, index, T_NUM_LIT, P_NUMBER);
 }
 
-SyntaxNode* syntax_parse_expr(vector* tokens, int* index, int precedence) {
-    int i = *index, previ = *index;
-    SyntaxNode* val = NULL;
+SyntaxNode* syntax_parse_expr_start(vector* tokens, int* index) {
+    int i = *index;
     Token* ct = tokens_next(tokens, &i);
+    SyntaxNode* val = NULL;
     if(ct->type == T_NUM_LIT)
         val = syntax_new_node(P_NUMBER, *ct);
-    else
-        return NULL;
-
-    ct = tokens_next(tokens, &i);
-    int cprec = syntax_op_precedence(ct->type);
-    if(cprec < precedence) { //not a binary operator 
-        *index = i-1;
-        return val;
+    else if(ct->type == T_O_PAREN) {
+        val = syntax_parse_expr(tokens, &i);
+        ct = tokens_next(tokens, &i);
+        if(ct->type != T_C_PAREN) {
+            printf("EXPECTED CLOSING PAREN\n");
+            exit(1);
+        }
     }
-    vector miniexprs = vector_new(sizeof(SyntaxNode*));
+    *index = i;
+    return val;
+}
+
+SyntaxNode* syntax_parse_expr_recursive(vector* tokens, int* index, int precedence, SyntaxNode* starting_node) {
+    //printf("STARTING TERM: %s", syntax_print_tree(starting_node).cstr);
+
+    int i = *index;
+    // i is on operator
+    Token* ct = tokens_next(tokens, &i);
+    // i is on expression start
+    int cprec = syntax_op_precedence(ct->type);
+    if(cprec < precedence)
+        return starting_node;
+    vector terms = vector_new(sizeof(SyntaxNode*));
     vector legs = vector_new(sizeof(SyntaxNode*));
-    vector_push(&miniexprs, &val);
+    vector_push(&terms, &starting_node);
     while(cprec >= precedence) {
         if(cprec > precedence) {
-            int ix = previ;
-            previ = i;
-            vector_pop(&miniexprs);
-            SyntaxNode* term = syntax_parse_expr(tokens, &ix, cprec);
-            i = ix;
-            vector_push(&miniexprs, &term);
+            i--;
+            SyntaxNode** snp = vector_pop(&terms);
+            //printf("POPING A TERM: %s", syntax_print_tree(*snp).cstr);
+            SyntaxNode* term = syntax_parse_expr_recursive(tokens, &i, cprec, *snp);
+            vector_push(&terms, &term);
+            free(snp);
         } else {
             SyntaxNode* newleg = syntax_new_node(P_BINARY_OP, *ct);
             vector_push(&legs, &newleg);
-            previ = i;
-            SyntaxNode* term = syntax_parse_expr(tokens, &i, MAX_PRECEDENCE); //gets the number
-            vector_push(&miniexprs, &term);
+            //printf("ADDING NEW LEG: %s", syntax_print_tree(newleg).cstr);
+            SyntaxNode* term = syntax_parse_expr_start(tokens, &i); //gets the number
+            //printf("ADDING NEW TERM: %s", syntax_print_tree(term).cstr);
+            vector_push(&terms, &term);
         }
         ct = tokens_next(tokens, &i);
         cprec = syntax_op_precedence(ct->type);
     }
     *index = i-1;
 
+    /* DEBUG
+    printf("--PREC %d\n", precedence);
+    printf("-LEGS %d\n", legs.length);
+    for(int j=0; j<legs.length; j++)
+        printf("%s", syntax_print_tree(*(SyntaxNode**)vector_item(&legs, j)).cstr);
+    printf("-TERMS %d\n", terms.length);
+    for(int j=0; j<terms.length; j++)
+        printf("%s", syntax_print_tree(*(SyntaxNode**)vector_item(&terms, j)).cstr);
+    printf("\n");
+    //*/
+
+    if(legs.length == 0)
+        return *(SyntaxNode**)vector_item(&terms, 0);
     SyntaxNode* red = *(SyntaxNode**)vector_item(&legs, 0);
-    syntax_node_add_child(red, *(SyntaxNode**)vector_item(&miniexprs, 0));
-    syntax_node_add_child(red, *(SyntaxNode**)vector_item(&miniexprs, 1));
+    syntax_node_add_child(red, *(SyntaxNode**)vector_item(&terms, 0));
+    syntax_node_add_child(red, *(SyntaxNode**)vector_item(&terms, 1));
     for(int j=1; j<legs.length; j++) {
         SyntaxNode* newred = *(SyntaxNode**)vector_item(&legs, j);
         syntax_node_add_child(newred, red);
-        syntax_node_add_child(newred, *(SyntaxNode**)vector_item(&miniexprs, j+1));
+        syntax_node_add_child(newred, *(SyntaxNode**)vector_item(&terms, j+1));
         red = newred;
     }
+    vector_free(&terms);
+    vector_free(&legs);
+    //printf("EXITING\n");
     return red;
+}
+
+SyntaxNode* syntax_parse_expr(vector* tokens, int* index) {
+    SyntaxNode* start = syntax_parse_expr_start(tokens, index);
+    if(start == NULL)
+        return NULL;
+    return syntax_parse_expr_recursive(tokens, index, MIN_PRECEDENCE, start);
 }
 
 SyntaxNode* syntax_parse_sum(vector* tokens, int* index) {
@@ -174,5 +211,17 @@ SyntaxNode* syntax_parse_sum(vector* tokens, int* index) {
 }
 
 SyntaxNode* syntax_parse_all(vector* tokens) {
-    return NULL;
+    int i = 0;
+    static Token t0 = { T_NEWLINE, "\n", -1 };
+    SyntaxNode* daddy = syntax_new_node(P_LIST, t0);
+    SyntaxNode* sa;
+    Token* t;
+    do {
+        sa = syntax_parse_expr(tokens, &i);
+        if(sa == NULL)
+            break;
+        syntax_node_add_child(daddy, sa);
+        t = tokens_next(tokens, &i);
+    } while(t->type == T_NEWLINE);
+    return daddy;
 }

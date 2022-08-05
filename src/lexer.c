@@ -46,6 +46,16 @@ Token token_next(char* str, int* index) {
         a.str = "/";
         i++;
     }
+    else if(str[i] == '(') {
+        a.type = T_O_PAREN;
+        a.str = "(";
+        i++;
+    }
+    else if(str[i] == ')') {
+        a.type = T_C_PAREN;
+        a.str = ")";
+        i++;
+    }
     *index = i;
     return a;
 }
@@ -83,7 +93,8 @@ void tokens_free(vector* v) {
     vector_free(v);
 }
 
-static const char* TOKEN_PRETTY_PRINTS[] = { "ERROR", "NEW LINE", " NUMBER", " PLUS", " MINUS", " STAR", " DIV", "END OF FILE" };
+static const char* TOKEN_PRETTY_PRINTS[] = { "ERROR", "NEW LINE", " NUMBER", 
+" PLUS", " MINUS", " STAR", " DIV", "END OF FILE", " OPEN PAREN", " CLOSING PAREN" };
 string token_print(Token* t) {
     const char* s = TOKEN_PRETTY_PRINTS[t->type];
     if(s[0] != ' ')
