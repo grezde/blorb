@@ -17,13 +17,23 @@ SyntaxNode* syntax_new_node(enum SyntaxNodeType type, Token token) {
     return sn;
 }
 
+SyntaxNode* syntax_new_error_node(const char* message, int position_start, int position_end) {
+    SyntaxNode* sn = malloc(sizeof(SyntaxNode));
+    sn->type = P_ERROR;
+    Token t = { T_ERROR, message, position_end };
+    sn->token = t;
+    sn->child_nodes = vector_new(sizeof(SyntaxNode));
+    return sn;
+}
+
 void syntax_node_add_child(SyntaxNode* sn, SyntaxNode* child) {
     vector_push(&(sn->child_nodes), child);
-    if(child != NULL) //remove this line !
-        free(child);
+    free(child);
 }
 
 static void syntax_free_node_recursive(SyntaxNode* sn) {
+    if(sn->type == P_ERROR)
+        free((void*)sn->token.str);
     for(int i=0; i<sn->child_nodes.length; i++) {
         SyntaxNode* isn = vector_item(&(sn->child_nodes), i);
         syntax_free_node_recursive(isn);
@@ -86,6 +96,8 @@ int syntax_op_precedence(enum TokenType tt) {
 }
 
 Token* tokens_next(vector* tokens, int* index) {
+    if(*index >= tokens->length)
+        return vector_item(tokens, tokens->length+1);
     Token* t = vector_item(tokens, *index);
     (*index)++;
     return t;
@@ -114,12 +126,28 @@ SyntaxNode* syntax_parse_expr_start(vector* tokens, int* index) {
         val = syntax_parse_expr(tokens, &i);
         ct = tokens_next(tokens, &i);
         if(ct->type != T_C_PAREN) {
-            printf("EXPECTED CLOSING PAREN\n");
-            exit(1);
+            syntax_free_node(val);
+            const char* s = string_from_lit("Opening parenthesis has no matching expression and closing parenthesis.").cstr;
+            return syntax_new_error_node(s, *index, *index+1);
         }
+    } else {
+        string s = string_from_lit("Expected expression, instead got token ");
+        string ts = token_print(ct);
+        string_pushs(&s, ts.cstr);
+        string_pushs(&s, ".");
+        string_free(&ts);
+        return syntax_new_error_node(s.cstr, *index, *index);
     }
     *index = i;
     return val;
+}
+
+void syntax_node_vector_free(vector* sns) {
+    for(int i=0; i<sns->length; i++) {
+        SyntaxNode** snp = vector_item(sns, i);
+        syntax_free_node(*snp);
+    }
+    vector_free(sns);
 }
 
 SyntaxNode* syntax_parse_expr_recursive(vector* tokens, int* index, int precedence, SyntaxNode* starting_node) {
@@ -141,6 +169,12 @@ SyntaxNode* syntax_parse_expr_recursive(vector* tokens, int* index, int preceden
             SyntaxNode** snp = vector_pop(&terms);
             //printf("POPING A TERM: %s", syntax_print_tree(*snp).cstr);
             SyntaxNode* term = syntax_parse_expr_recursive(tokens, &i, cprec, *snp);
+            if(term->type == P_ERROR) {
+                free(snp);
+                syntax_node_vector_free(&terms);
+                syntax_node_vector_free(&legs);
+                return term;
+            }
             vector_push(&terms, &term);
             free(snp);
         } else {
@@ -148,6 +182,16 @@ SyntaxNode* syntax_parse_expr_recursive(vector* tokens, int* index, int preceden
             vector_push(&legs, &newleg);
             //printf("ADDING NEW LEG: %s", syntax_print_tree(newleg).cstr);
             SyntaxNode* term = syntax_parse_expr_start(tokens, &i); //gets the number
+            if(term->type == P_ERROR) {
+                string msg = string_from_string(term->token.str);
+                string_pushs(&msg, " Binary operator ");
+                string_pushs(&msg, ct->str);
+                string_pushs(&msg, " has no second expression.");
+                term->token.str = msg.cstr;
+                syntax_node_vector_free(&terms);
+                syntax_node_vector_free(&legs);
+                return term;
+            }
             //printf("ADDING NEW TERM: %s", syntax_print_tree(term).cstr);
             vector_push(&terms, &term);
         }
@@ -167,8 +211,12 @@ SyntaxNode* syntax_parse_expr_recursive(vector* tokens, int* index, int preceden
     printf("\n");
     //*/
 
-    if(legs.length == 0)
-        return *(SyntaxNode**)vector_item(&terms, 0);
+    if(legs.length == 0) {
+        SyntaxNode* sn = *(SyntaxNode**)vector_item(&terms, 0);
+        vector_free(&terms);
+        vector_free(&legs);
+        return sn;
+    }
     SyntaxNode* red = *(SyntaxNode**)vector_item(&legs, 0);
     syntax_node_add_child(red, *(SyntaxNode**)vector_item(&terms, 0));
     syntax_node_add_child(red, *(SyntaxNode**)vector_item(&terms, 1));
@@ -186,28 +234,9 @@ SyntaxNode* syntax_parse_expr_recursive(vector* tokens, int* index, int preceden
 
 SyntaxNode* syntax_parse_expr(vector* tokens, int* index) {
     SyntaxNode* start = syntax_parse_expr_start(tokens, index);
-    if(start == NULL)
-        return NULL;
+    if(start->type == P_ERROR)
+        return start;
     return syntax_parse_expr_recursive(tokens, index, MIN_PRECEDENCE, start);
-}
-
-SyntaxNode* syntax_parse_sum(vector* tokens, int* index) {
-    int i = *index;
-    SyntaxNode* sn1 = syntax_parse_number(tokens, &i);
-    if(sn1 == NULL)
-        return NULL;
-    Token* token = vector_item(tokens, i);
-    if(token->type != T_PLUS && token->type != T_MINUS)
-        return NULL;
-    i++;
-    SyntaxNode* sn2 = syntax_parse_number(tokens, &i);
-    if(sn2 == NULL)
-        return NULL;
-    SyntaxNode* sn = syntax_new_node(P_BINARY_OP, *token);
-    syntax_node_add_child(sn, sn1);
-    syntax_node_add_child(sn, sn2);
-    *index = i;
-    return sn;
 }
 
 SyntaxNode* syntax_parse_all(vector* tokens) {
@@ -218,8 +247,10 @@ SyntaxNode* syntax_parse_all(vector* tokens) {
     Token* t;
     do {
         sa = syntax_parse_expr(tokens, &i);
-        if(sa == NULL)
-            break;
+        if(sa->type == P_ERROR) {
+            syntax_free_node(daddy);
+            return sa;
+        }
         syntax_node_add_child(daddy, sa);
         t = tokens_next(tokens, &i);
     } while(t->type == T_NEWLINE);

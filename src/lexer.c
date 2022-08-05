@@ -2,17 +2,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-Token token_next(char* str, int* index) {
+Token token_next(const char* str, int* index) {
     Token a;
     int i = *index;
-    a.pos = i;
     while(str[i] == ' ')
         i++;
+    a.pos = i;
     if(str[i] == '\0') {
         a.type = T_EOF;
         a.str = NULL;
     }
-    if(str[i] == '\n') {
+    else if(str[i] == '\n') {
         a.type = T_NEWLINE;
         a.str = "\\n";
         i++;
@@ -55,19 +55,26 @@ Token token_next(char* str, int* index) {
         a.type = T_C_PAREN;
         a.str = ")";
         i++;
+    } else {
+        a.type = T_ERROR;
+        string s = string_new();
+        string_pushs(&s, "Unexpected character ");
+        string_pushc(&s, str[i]);
+        a.str = s.cstr;
+        i++;
     }
     *index = i;
     return a;
 }
 
-vector tokens_all(char* str) {
+vector tokens_all(const char* str) {
     vector v = vector_new(sizeof(Token));
     Token t;
     int i = 0;
     do {
         t = token_next(str, &i);
         vector_push(&v, &t);
-    } while(t.type != T_EOF);
+    } while(t.type != T_EOF && t.type != T_ERROR);
     return v;
 }
 
@@ -87,8 +94,9 @@ string tokens_print(vector* v) {
 void tokens_free(vector* v) {
     for(int i=0; i<v->length; i++) {
         Token* t = vector_item(v, i);
-        if(t->type == T_NUM_LIT)
-            free(t->str);
+        if(t->type == T_NUM_LIT || t->type == T_ERROR)
+            if(t->str != NULL)
+                free((void*)t->str);
     }
     vector_free(v);
 }
@@ -103,4 +111,26 @@ string token_print(Token* t) {
     string_pushc(&str, ' ');
     string_pushs(&str, t->str);
     return str;
+}
+
+vector token_line_positions(const char* str) {
+    vector v = vector_new(sizeof(int));
+    int i=0;
+    vector_push(&v, &i);
+    for(i=0; str[i] != '\0'; i++) {
+        if(str[i] == '\n')
+            vector_push(&v, &i);
+    }
+    return v;
+}
+
+FullPosition token_get_position(vector* linev, int position) {
+    // TODO binary sort
+    int i=0;
+    while(i < linev->length && (*(int*)vector_item(linev, i)) < position)
+        i++;
+    i--;
+    int line_pos = *(int*)vector_item(linev, i);
+    FullPosition fp = { i+2, position-line_pos };
+    return fp;
 }

@@ -3,31 +3,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-char* read_file(char* filename) {
+const char* read_file(const char* filename) {
     FILE* f = fopen(filename, "r");
     if(f == NULL)
         return NULL;
     char c;
-    int sz = 128, id = 0;
-    char* str = malloc(sz);
-    memset(str, 0, sz);
+    string s = string_new();
     while(!feof(f)) {
         c = fgetc(f);
         if(c == EOF)
             break;
-        if(id == sz-1) {
-            char* str2 = malloc(2 * sz);
-            memset(str2 + sz - 2, 0, sz + 2);
-            strcpy(str, str2);
-            free(str);
-            str = str2;
-            sz *= 2;
-        }
-        str[id] = c;
-        id++;
+        string_pushc(&s, c);
     }
     fclose(f);
-    return str;
+    return s.cstr;
 }
 
 string string_new() {
@@ -42,6 +31,16 @@ string string_new() {
 string string_from_lit(const char* s) {
     string str = string_new();
     string_pushs(&str, s);
+    return str;
+}
+
+string string_from_string(const char* s) {
+    string str;
+    str.length = strlen(s);
+    str.buff_size = 2;
+    while(str.buff_size < str.length+1)
+        str.buff_size *= 2;
+    str.cstr = (char*)s;
     return str;
 }
 
@@ -69,6 +68,7 @@ void string_pushc(string* str, const char c) {
         memset(cstr + str->length, 0, 2 * str->buff_size - str->length);
         strcpy(cstr, str->cstr);
         free(str->cstr);
+        str->buff_size *= 2;
         str->cstr = cstr;
     }
     str->cstr[str->length] = c;
@@ -79,6 +79,15 @@ void string_pushs(string* str, const char* s) {
     int l = strlen(s);
     string_allocate(str, l);
     strcpy(str->cstr + str->length, s);
+    str->length += l;
+}
+
+void string_pushint(string* str, const int i) {
+    char buffer[20];
+    snprintf(buffer, 18, "%d\0", i);
+    int l = strlen(buffer);
+    string_allocate(str, l);
+    strcpy(str->cstr + str->length, buffer);
     str->length += l;
 }
 

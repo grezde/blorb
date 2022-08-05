@@ -1,6 +1,6 @@
 #pragma once
 
-char* read_file(char* filename);
+const char* read_file(const char* filename);
 
 typedef struct {
     int length;
@@ -24,8 +24,10 @@ void* vector_pop(vector* vec);
 
 string string_new();
 string string_from_lit(const char* s);
+string string_from_string(const char* s);
 void string_allocate(string* str, int length);
 void string_free(string* s);
 
 void string_pushc(string* str, const char c);
 void string_pushs(string* str, const char* s);
+void string_pushint(string* str, const int i);

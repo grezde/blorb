@@ -16,13 +16,21 @@ enum TokenType {
 
 typedef struct {
     enum TokenType type;
-    char* str;
+    const char* str;
     int pos;
 } Token;
 
-Token token_next(char* str, int* index);
-vector tokens_all(char* str);
+typedef struct {
+    int line;
+    int row;
+} FullPosition;
+
+Token token_next(const char* str, int* index);
+vector tokens_all(const char* str);
 void tokens_free(vector* v);
 
 string tokens_print(vector* v);
 string token_print(Token* t);
+
+vector token_line_positions(const char* str);
+FullPosition token_get_position(vector* linev, int position);
