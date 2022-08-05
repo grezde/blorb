@@ -67,7 +67,7 @@ string tokens_print(vector* v) {
         Token* t = vector_item(v, i);
         string ts = token_print(t);
         char buffer[1000];
-        snprintf(buffer, 995, "TOKEN at %d: %s\n", t->pos, ts.cstr);
+        snprintf(buffer, 995, "T%02d at %d: %s\n", i, t->pos, ts.cstr);
         string_free(&ts);
         string_pushs(&s, buffer);
     }

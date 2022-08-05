@@ -123,6 +123,14 @@ void* vector_item(const vector* vec, int index) {
     return vec->carr + index * vec->elem_size;
 }
 
+void* vector_pop(vector* vec) {
+    void* item = vec->carr + (vec->length + 1) * vec->elem_size;
+    void* newitem = malloc(vec->elem_size);
+    memcpy(newitem, item, vec->elem_size);
+    vec->length--;
+    return newitem;
+}
+
 void vector_free(vector* vec) {
     free(vec->carr);
 }

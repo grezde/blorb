@@ -15,13 +15,19 @@ typedef struct {
     vector child_nodes;
 } SyntaxNode;
 
+
+
 SyntaxNode* syntax_new_node(enum SyntaxNodeType type, Token token);
+void syntax_node_add_child(SyntaxNode* sn, SyntaxNode* child);
 void syntax_free_node(SyntaxNode* sn);
+string syntax_print_tree(SyntaxNode* sn);
+
+int syntax_op_precedence(enum TokenType tt);
+SyntaxNode* syntax_try_parse(vector* tokens, int* index, enum TokenType tt, enum SyntaxNodeType st);
+Token* tokens_next(vector* tokens, int* index);
 
 SyntaxNode* syntax_parse_number(vector* tokens, int* index);
 SyntaxNode* syntax_parse_sum(vector* tokens, int* index);
+SyntaxNode* syntax_parse_expr(vector* tokens, int* index, int precedence);
 
 SyntaxNode* syntax_parse_all(vector* tokens);
-
-void syntax_print_node(string* s, SyntaxNode* sn, int indent);
-string syntax_print_tree(SyntaxNode* sn);
