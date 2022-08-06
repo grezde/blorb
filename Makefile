@@ -15,4 +15,3 @@ build: $(OBJECTS)
 
 run: build
 	./blorbc test.b
-	cat test.b | bc

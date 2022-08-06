@@ -31,3 +31,4 @@ void string_free(string* s);
 void string_pushc(string* str, const char c);
 void string_pushs(string* str, const char* s);
 void string_pushint(string* str, const int i);
+void string_concat(string* str, string tail);

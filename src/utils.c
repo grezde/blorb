@@ -91,6 +91,11 @@ void string_pushint(string* str, const int i) {
     str->length += l;
 }
 
+void string_concat(string* str, string tail) {
+    string_pushs(str, tail.cstr);
+    free(tail.cstr);
+}
+
 vector vector_new(int elem_size) {
     vector v;
     v.length = 0;

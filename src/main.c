@@ -4,10 +4,10 @@
 #include <unistd.h>
 #include "eval.h"
 
-static bool show_headers = false;
+static bool show_headers = true;
 static bool show_file_contents = false;
-static bool show_tokens  = false;
-static bool show_syntax  = false;
+static bool show_tokens  = true;
+static bool show_syntax  = true;
 static bool show_eval    = true;
 
 int eval_file(const char* filename) {
@@ -21,7 +21,6 @@ int eval_file(const char* filename) {
             printf("-- FILE CONTENTS --\n");
         printf("file %s:\n%s\n", filename, cnts);
     }
-    
     vector lns = token_line_positions(cnts);
     vector v = tokens_all(cnts); 
     Token* t = vector_item(&v, v.length-1);
@@ -40,8 +39,7 @@ int eval_file(const char* filename) {
         printf("%s", s.cstr);
         string_free(&s);
     }
-
-    SyntaxNode* sn = syntax_parse_all(&v);
+    SyntaxNode* sn  = syntax_parse_statement_file(&v);
     if(sn->type == P_ERROR) {
         FullPosition fp = token_get_position(&lns, sn->token.pos);
         printf("PARSER ERROR: file %s, line %d, row %d: %s\n", filename, fp.line, fp.row, sn->token.str);
@@ -60,16 +58,10 @@ int eval_file(const char* filename) {
     }
 
 
-    vector results = eval_list(sn);
-    if(show_eval) {
-        if(show_headers)
-            printf("-- EVALUATION --\n");
-        for(int i=0; i<results.length; i++) {
-            int* result = vector_item(&results, i);
-            printf("%d\n", *result);
-        }
-    } 
-
+    if(show_headers)
+        printf("-- EVALUATION --\n");
+    eval_statement_file(sn);
+    
     syntax_free_node(sn);
     tokens_free(&v);
     vector_free(&lns);

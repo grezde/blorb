@@ -6,7 +6,11 @@ enum SyntaxNodeType {
     P_NUMBER,
     P_UNARY_OP,
     P_BINARY_OP,
-    P_LIST
+    P_LIST,
+    P_VAR_DECL,
+    P_VAR_SET,
+    P_PRINT_DECL,
+    P_VAR_NAME
 };
 
 typedef struct {
@@ -31,5 +35,13 @@ SyntaxNode* syntax_parse_number(vector* tokens, int* index);
 SyntaxNode* syntax_parse_expr_recursive(vector* tokens, int* index, int precedence, SyntaxNode* staring_node);
 SyntaxNode* syntax_parse_start(vector* tokens, int* index);
 SyntaxNode* syntax_parse_expr(vector* tokens, int* index);
+
+SyntaxNode* syntax_parse_print_decl(vector* tokens, int* index);
+SyntaxNode* syntax_parse_var_set(vector* tokens, int* index);
+SyntaxNode* syntax_parse_var_decl(vector* tokens, int* index);
+SyntaxNode* syntax_parse_statement(vector* tokens, int* index);
+SyntaxNode* syntax_parse_statement_file(vector* tokens);
+
+SyntaxNode* syntax_parse_expr_list(vector* tokens);
 
 SyntaxNode* syntax_parse_all(vector* tokens);

@@ -1,22 +1,32 @@
 #include "lexer.h"
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+int is_ok_var_start(char c) {
+    return  
+        (c >= 'a' && c <= 'z') ||
+        (c >= 'A' && c <= 'Z') ||
+        c == '_';
+}
+
 Token token_next(const char* str, int* index) {
     Token a;
+    a.type = T_ERROR;
     int i = *index;
-    while(str[i] == ' ')
+    while(str[i] == ' ' || str[i] == '\t' || str[i] == '\n')
         i++;
     a.pos = i;
     if(str[i] == '\0') {
         a.type = T_EOF;
-        a.str = NULL;
+        a.str = "\0";
     }
+    /*
     else if(str[i] == '\n') {
         a.type = T_NEWLINE;
         a.str = "\\n";
         i++;
-    }
+    } //*/
     else if(str[i] >= '0' && str[i] <= '9') {
         string lit = string_new();
         while(str[i] >= '0' && str[i] <= '9') {
@@ -25,6 +35,24 @@ Token token_next(const char* str, int* index) {
         }
         a.type = T_NUM_LIT;
         a.str = lit.cstr;
+    }
+    else if(is_ok_var_start(str[i])) {
+        string ident = string_new();
+        while(is_ok_var_start(str[i]) || (str[i] >= '0' && str[i] <= '9')) {
+            string_pushc(&ident, str[i]);
+            i++;
+        }
+        for(int j=0; j<TOKEN_KEYWORDS_LEN; j++)
+            if(strcmp(ident.cstr, TOKEN_KEYWORDS[j]) == 0) {
+                a.type = T_KEYWORD;
+                a.str = TOKEN_KEYWORDS[j];
+                string_free(&ident);
+                break;
+            }
+        if(a.type == T_ERROR) {
+            a.type = T_IDENTIFIER;
+            a.str = ident.cstr;
+        }
     }
     else if(str[i] == '+') {
         a.type = T_PLUS;
@@ -55,8 +83,16 @@ Token token_next(const char* str, int* index) {
         a.type = T_C_PAREN;
         a.str = ")";
         i++;
+    }
+    else if(str[i] == '=') {
+        a.type = T_EQ;
+        a.str = "=";
+        i++;
+    } else if(str[i] == ';') {
+        a.type = T_SC;
+        a.str = ";";
+        i++;
     } else {
-        a.type = T_ERROR;
         string s = string_new();
         string_pushs(&s, "Unexpected character ");
         string_pushc(&s, str[i]);
@@ -94,7 +130,7 @@ string tokens_print(vector* v) {
 void tokens_free(vector* v) {
     for(int i=0; i<v->length; i++) {
         Token* t = vector_item(v, i);
-        if(t->type == T_NUM_LIT || t->type == T_ERROR)
+        if(t->type == T_NUM_LIT || t->type == T_ERROR || t->type == T_IDENTIFIER)
             if(t->str != NULL)
                 free((void*)t->str);
     }
@@ -102,7 +138,8 @@ void tokens_free(vector* v) {
 }
 
 static const char* TOKEN_PRETTY_PRINTS[] = { "ERROR", "NEW LINE", " NUMBER", 
-" PLUS", " MINUS", " STAR", " DIV", "END OF FILE", " OPEN PAREN", " CLOSING PAREN" };
+" KEYWORD", " IDENT", " PLUS", " MINUS", " STAR", " DIV", "END OF FILE", 
+" OPEN PAREN", " CLOSING PAREN", " EQUALS", " SEMICOLON" };
 string token_print(Token* t) {
     const char* s = TOKEN_PRETTY_PRINTS[t->type];
     if(s[0] != ' ')

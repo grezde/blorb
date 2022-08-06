@@ -51,6 +51,10 @@ var main: () -> () = () => {
 ````
 type JSONvalue = JSONnull | JSONbool bool | JSONnumber float64;
 
+var getNumber = (JSONValue json) => {
+    return 0;  
+};
+
 var getNumber: JSONvalue -> float64 = json => {
     if(json as JSONnull)
         return 0;
