@@ -48,8 +48,16 @@ void syntax_free_node(SyntaxNode* sn) {
     free(sn);
 }
 
-static const const char* SYNTAX_PRETTY_PRINTS[] = { "ERROR", " NUMBER", " UN OP", 
-" BIN OP", "LIST", " VAR DECL", " VAR SET", "PRINT", " VARIABLE" };
+void syntax_node_vector_free(vector* sns) {
+    for(int i=0; i<sns->length; i++) {
+        SyntaxNode** snp = vector_item(sns, i);
+        syntax_free_node(*snp);
+    }
+    vector_free(sns);
+}
+
+static const const char* SYNTAX_PRETTY_PRINTS[] = { " ERROR", " NUMBER", " UN OP", 
+" BIN OP", "LIST", "VAR DECL", "VAR SET", "PRINT", " SCAN", " VARIABLE" };
 static void syntax_print_tree_recursive(string* s, SyntaxNode* sn, int indent) {
     for(int i=0; i<indent; i++)
         string_pushs(s, "   ");
@@ -57,7 +65,9 @@ static void syntax_print_tree_recursive(string* s, SyntaxNode* sn, int indent) {
         string_pushs(s, "NULL\n");
         return;   
     }
+    printf("TYPE %d\n", sn->type);
     const char* pp = SYNTAX_PRETTY_PRINTS[sn->type];
+    printf("STR  %s\n", pp);
     if(pp[0] == ' ') {
         string_pushs(s, pp+1);
         string_pushs(s, " (");
@@ -156,14 +166,6 @@ SyntaxNode* syntax_parse_expr_start(vector* tokens, int* index) {
     }
     *index = i;
     return val;
-}
-
-void syntax_node_vector_free(vector* sns) {
-    for(int i=0; i<sns->length; i++) {
-        SyntaxNode** snp = vector_item(sns, i);
-        syntax_free_node(*snp);
-    }
-    vector_free(sns);
 }
 
 SyntaxNode* syntax_parse_expr_recursive(vector* tokens, int* index, int precedence, SyntaxNode* starting_node) {
@@ -281,6 +283,47 @@ SyntaxNode* syntax_parse_print_decl(vector* tokens, int* index) {
     return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
 }
 
+SyntaxNode* syntax_parse_scan_decl(vector* tokens, int* index) {
+    int i = *index;
+    Token* t = tokens_next(tokens, &i);
+    if(t->type == T_KEYWORD && strcmp(t->str, "scan") == 0) {
+        Token tt = *t;
+        SyntaxNode* expr = syntax_parse_expr(tokens, &i);
+        if(expr->type == T_ERROR)
+            return expr;
+        t = tokens_next(tokens, &i);
+        if(t->type != T_SC) {
+            string s = string_from_lit("Expected SEMICOLON (;) in scan statement, but instead got token ");
+            string_concat(&s, token_print(t));
+            string_pushs(&s, ".");
+            return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
+        }
+        SyntaxNode* sn = syntax_new_node(P_PRINT_DECL, tt);
+        syntax_node_add_child(sn, expr);
+        *index = i;
+        return sn;
+    }
+    string s = string_from_lit("Expected KEYWORD (scan) for scan declaration, but instead got token ");
+    string_concat(&s, token_print(t));
+    string_pushs(&s, ".");
+    return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
+}
+
+SyntaxNode* syntax_parse_var_set_stm(vector* tokens, int* index) {
+    SyntaxNode* sn = syntax_parse_var_set(tokens, index);
+    if(sn->type == P_ERROR)
+        return sn;
+    Token* t = tokens_next(tokens, index);
+    if(t->type != T_SC) {
+        syntax_free_node(sn);
+        string s = string_from_lit("Expected SEMICOLON (;) in variable asssignement, but instead got token ");
+        string_concat(&s, token_print(t));
+        string_pushs(&s, ".");
+        return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
+    }
+    return sn;
+}
+
 SyntaxNode* syntax_parse_var_set(vector* tokens, int* index) {
     int i= *index;
     Token* t = tokens_next(tokens, &i);
@@ -290,7 +333,7 @@ SyntaxNode* syntax_parse_var_set(vector* tokens, int* index) {
         string_pushs(&s, ".");
         return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
     }
-    Token vart = *t;
+    SyntaxNode* svar = syntax_new_node(P_VAR_NAME, *t);
     t = tokens_next(tokens, &i);
     if(t->type != T_EQ) {
         string s = string_from_lit("Expected EQUALS (=) in variable asssignement, but instead got token ");
@@ -301,15 +344,8 @@ SyntaxNode* syntax_parse_var_set(vector* tokens, int* index) {
     SyntaxNode* expr = syntax_parse_expr(tokens, &i);
     if(expr->type == P_ERROR)
         return expr;
-    t = tokens_next(tokens, &i);
-    if(t->type != T_SC) {
-        string s = string_from_lit("Expected SEMICOLON (;) in variable asssignement, but instead got token ");
-        string_concat(&s, token_print(t));
-        string_pushs(&s, ".");
-        syntax_free_node(expr);
-        return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
-    }
-    SyntaxNode* sn = syntax_new_node(P_VAR_SET, vart);
+    SyntaxNode* sn = syntax_new_node(P_VAR_SET, *t);
+    syntax_node_add_child(sn, svar);
     syntax_node_add_child(sn, expr);
     *index = i;
     return sn;
@@ -319,7 +355,47 @@ SyntaxNode* syntax_parse_var_decl(vector* tokens, int* index) {
     int i = *index;
     Token* t = tokens_next(tokens, &i);
     if(t->type == T_KEYWORD && strcmp("var", t->str) == 0) {
-        t = tokens_next(tokens, &i);
+        SyntaxNode* vs = syntax_new_node(P_VAR_DECL, *t);
+        while(true) {
+            t = tokens_next(tokens, &i);
+            if(t->type != T_IDENTIFIER) {
+                string s = string_from_lit("Expected identifier after var keyword, but instead got token ");
+                string_concat(&s, token_print(t));
+                string_pushs(&s, ".");
+                return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
+            }
+            Token* t2 = tokens_next(tokens, &i);
+            if(t2->type == T_SC) {
+                SyntaxNode* varname = syntax_new_node(P_VAR_NAME, *t);
+                syntax_node_add_child(vs, varname);
+                break;
+            }
+            else if(t2->type == T_COMMA) {
+                SyntaxNode* varname = syntax_new_node(P_VAR_NAME, *t);
+                syntax_node_add_child(vs, varname);
+            }
+            else {
+                i-=2;
+                SyntaxNode* varset = syntax_parse_var_set(tokens, &i);
+                if(varset->type == P_ERROR)
+                    return varset;
+                syntax_node_add_child(vs, varset);
+                t2 = tokens_next(tokens, &i);
+                if(t2->type == T_SC)
+                    break;
+                else if(t2->type != T_COMMA) {
+                    string s = string_from_lit("Expected COMMA (,) after var keyword, but instead got token ");
+                    string_concat(&s, token_print(t));
+                    string_pushs(&s, ".");
+                    return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
+                }
+            }
+        }
+        *index = i;
+        printf("AA\n");
+        printf("%s", syntax_print_tree(vs).cstr);
+        printf("AA\n");
+        return vs;
         if(t->type != T_IDENTIFIER) {
             string s = string_from_lit("Expected identifier after var keyword, but instead got token ");
             string_concat(&s, token_print(t));
@@ -367,8 +443,9 @@ SyntaxNode* syntax_parse_statement(vector* tokens, int* index) {
         *index = i;
         return sn;
     }
+    printf("B %s", syntax_print_tree(sn).cstr);
     syntax_free_node(sn);
-    sn = syntax_parse_var_set(tokens, &i);
+    sn = syntax_parse_var_set_stm(tokens, &i);
     if(sn->type != P_ERROR) {
         *index = i;
         return sn;

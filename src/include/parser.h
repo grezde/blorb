@@ -10,6 +10,7 @@ enum SyntaxNodeType {
     P_VAR_DECL,
     P_VAR_SET,
     P_PRINT_DECL,
+    P_SCAN_DECL,
     P_VAR_NAME
 };
 
@@ -38,6 +39,7 @@ SyntaxNode* syntax_parse_expr(vector* tokens, int* index);
 
 SyntaxNode* syntax_parse_print_decl(vector* tokens, int* index);
 SyntaxNode* syntax_parse_var_set(vector* tokens, int* index);
+SyntaxNode* syntax_parse_var_set_stm(vector* tokens, int* index);
 SyntaxNode* syntax_parse_var_decl(vector* tokens, int* index);
 SyntaxNode* syntax_parse_statement(vector* tokens, int* index);
 SyntaxNode* syntax_parse_statement_file(vector* tokens);

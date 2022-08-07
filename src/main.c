@@ -13,7 +13,7 @@ static bool show_eval    = true;
 int eval_file(const char* filename) {
     const char* cnts = read_file(filename);
     if(cnts == NULL) {
-        printf("COMPILER ERROR: compiler input: File %s could not be read.\n", filename);
+        printf("COMPILER ERROR: File %s could not be read.\n", filename);
         return 1;
     }
     if(show_file_contents) {
@@ -21,12 +21,12 @@ int eval_file(const char* filename) {
             printf("-- FILE CONTENTS --\n");
         printf("file %s:\n%s\n", filename, cnts);
     }
+    vector ers = vector_new(sizeof(Error));
     vector lns = token_line_positions(cnts);
-    vector v = tokens_all(cnts); 
-    Token* t = vector_item(&v, v.length-1);
-    if(t->type == T_ERROR) {
-        FullPosition fp = token_get_position(&lns, t->pos);
-        printf("LEXER ERROR: file %s, line %d, row %d: %s\n", filename, fp.line, fp.row, t->str);
+    vector v = tokens_all(cnts, &ers); 
+    if(ers.length > 0) {
+        errors_print(&ers);
+        errors_free(&ers);
         tokens_free(&v);
         vector_free(&lns);
         free((void*)cnts);
@@ -56,7 +56,6 @@ int eval_file(const char* filename) {
         printf("%s", s.cstr);
         string_free(&s);
     }
-
 
     if(show_headers)
         printf("-- EVALUATION --\n");

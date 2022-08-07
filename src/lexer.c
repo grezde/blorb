@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// --------
+// LEXING
+// --------
+
 int is_ok_var_start(char c) {
     return  
         (c >= 'a' && c <= 'z') ||
@@ -10,7 +14,7 @@ int is_ok_var_start(char c) {
         c == '_';
 }
 
-Token token_next(const char* str, int* index) {
+Token token_next(const char* str, int* index, vector* ers) {
     Token a;
     a.type = T_ERROR;
     int i = *index;
@@ -92,26 +96,88 @@ Token token_next(const char* str, int* index) {
         a.type = T_SC;
         a.str = ";";
         i++;
+    } else if(str[i] == ',') {
+        a.type = T_COMMA;
+        a.str = ",";
+        i++;
     } else {
         string s = string_new();
         string_pushs(&s, "Unexpected character ");
         string_pushc(&s, str[i]);
-        a.str = s.cstr;
+        Error e;
+        e.type = E_LEX;
+        e.start = e.end = i;
+        e.msg = s.cstr;
+        vector_push(ers, &e);
         i++;
     }
     *index = i;
     return a;
 }
 
-vector tokens_all(const char* str) {
+vector tokens_all(const char* str, vector* ers) {
     vector v = vector_new(sizeof(Token));
     Token t;
     int i = 0;
     do {
-        t = token_next(str, &i);
+        t = token_next(str, &i, ers);
+        if(ers->length > 0)
+            return v;
         vector_push(&v, &t);
-    } while(t.type != T_EOF && t.type != T_ERROR);
+    } while(t.type != T_EOF);
     return v;
+}
+
+// --------
+// LEXING UTILS
+// --------
+
+static const char* ERROR_PRETTY_PRINTS[] = { "UNKNOWN", "COMPILER", 
+"LEXICAL", "SYNTACTIC", "SEMANTIC", "EVALUATION" };
+void error_print(Error* e) {
+    const char* type = ERROR_PRETTY_PRINTS[e->type];
+    string s = string_from_lit(type);
+    string_pushs(&s, " ERROR: ");
+    string_pushs(&s, e->msg);
+    printf("%s\n", s.cstr);
+    string_free(&s);
+}
+
+void errors_print(vector* v) {
+    for(int i=0; i<v->length; i++)
+        error_print(vector_item(v, i));
+}
+
+void errors_free(vector* v) {
+    for(int i=0; i<v->length; i++) {
+        Error* e = vector_item(v, i);
+        free(e->msg);
+    }
+}
+
+void token_free(Token* t) {
+    if(t->type == T_NUM_LIT || t->type == T_ERROR || t->type == T_IDENTIFIER)
+        if(t->str != NULL)
+            free((void*)t->str);
+}
+
+void tokens_free(vector* v) {
+    for(int i=0; i<v->length; i++)
+        token_free(vector_item(v, i));
+    vector_free(v);
+}
+
+static const char* TOKEN_PRETTY_PRINTS[] = { "ERROR", "NEW LINE", " NUMBER", 
+" KEYWORD", " IDENT", " PLUS", " MINUS", " STAR", " DIV", "END OF FILE", 
+" OPEN PAREN", " CLOSING PAREN", " EQUALS", " SEMICOLON", " COMMA" };
+string token_print(Token* t) {
+    const char* s = TOKEN_PRETTY_PRINTS[t->type];
+    if(s[0] != ' ')
+        return string_from_lit(s);
+    string str = string_from_lit(s+1);
+    string_pushc(&str, ' ');
+    string_pushs(&str, t->str);
+    return str;
 }
 
 string tokens_print(vector* v) {
@@ -127,47 +193,28 @@ string tokens_print(vector* v) {
     return s;
 }
 
-void tokens_free(vector* v) {
-    for(int i=0; i<v->length; i++) {
-        Token* t = vector_item(v, i);
-        if(t->type == T_NUM_LIT || t->type == T_ERROR || t->type == T_IDENTIFIER)
-            if(t->str != NULL)
-                free((void*)t->str);
-    }
-    vector_free(v);
-}
-
-static const char* TOKEN_PRETTY_PRINTS[] = { "ERROR", "NEW LINE", " NUMBER", 
-" KEYWORD", " IDENT", " PLUS", " MINUS", " STAR", " DIV", "END OF FILE", 
-" OPEN PAREN", " CLOSING PAREN", " EQUALS", " SEMICOLON" };
-string token_print(Token* t) {
-    const char* s = TOKEN_PRETTY_PRINTS[t->type];
-    if(s[0] != ' ')
-        return string_from_lit(s);
-    string str = string_from_lit(s+1);
-    string_pushc(&str, ' ');
-    string_pushs(&str, t->str);
-    return str;
-}
-
 vector token_line_positions(const char* str) {
     vector v = vector_new(sizeof(int));
     int i=0;
     vector_push(&v, &i);
     for(i=0; str[i] != '\0'; i++) {
-        if(str[i] == '\n')
+        if(str[i] == '\n') {
+            i++;
             vector_push(&v, &i);
+            i--;
+        }
     }
+    free(vector_pop(&v));
     return v;
 }
 
 FullPosition token_get_position(vector* linev, int position) {
-    // TODO binary sort
+    // TODO binary search
     int i=0;
-    while(i < linev->length && (*(int*)vector_item(linev, i)) < position)
+    while(i < linev->length && *(int*)vector_item(linev, i) < position)
         i++;
     i--;
     int line_pos = *(int*)vector_item(linev, i);
-    FullPosition fp = { i+2, position-line_pos };
+    FullPosition fp = { i+1, position-line_pos+1 };
     return fp;
 }
