@@ -286,27 +286,33 @@ SyntaxNode* syntax_parse_print_decl(vector* tokens, int* index) {
 SyntaxNode* syntax_parse_scan_decl(vector* tokens, int* index) {
     int i = *index;
     Token* t = tokens_next(tokens, &i);
-    if(t->type == T_KEYWORD && strcmp(t->str, "scan") == 0) {
-        Token tt = *t;
-        SyntaxNode* expr = syntax_parse_expr(tokens, &i);
-        if(expr->type == T_ERROR)
-            return expr;
-        t = tokens_next(tokens, &i);
-        if(t->type != T_SC) {
-            string s = string_from_lit("Expected SEMICOLON (;) in scan statement, but instead got token ");
-            string_concat(&s, token_print(t));
-            string_pushs(&s, ".");
-            return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
-        }
-        SyntaxNode* sn = syntax_new_node(P_PRINT_DECL, tt);
-        syntax_node_add_child(sn, expr);
-        *index = i;
-        return sn;
+    if(!(t->type == T_KEYWORD && strcmp(t->str, "scan") == 0)) {
+        string s = string_from_lit("Expected KEYWORD (scan) for scan declaration, but instead got token ");
+        string_concat(&s, token_print(t));
+        string_pushs(&s, ".");
+        return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
     }
-    string s = string_from_lit("Expected KEYWORD (scan) for scan declaration, but instead got token ");
-    string_concat(&s, token_print(t));
-    string_pushs(&s, ".");
-    return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
+    Token tt = *t;
+    t = tokens_next(tokens, &i);
+    if(t->type != T_IDENTIFIER) {
+        string s = string_from_lit("Expected variable name after scan declaration, but instead got token ");
+        string_concat(&s, token_print(t));
+        string_pushs(&s, ".");
+        return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
+    }
+    SyntaxNode* varname = syntax_new_node(P_VAR_NAME, *t);
+    t = tokens_next(tokens, &i);
+    if(t->type != T_SC) {
+        string s = string_from_lit("Expected SEMICOLON (;) in scan statement, but instead got token ");
+        string_concat(&s, token_print(t));
+        string_pushs(&s, ".");
+        syntax_free_node(varname);
+        return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
+    }
+    SyntaxNode* sn = syntax_new_node(P_SCAN_DECL, tt);
+    syntax_node_add_child(sn, varname);
+    *index = i;
+    return sn;
 }
 
 SyntaxNode* syntax_parse_var_set_stm(vector* tokens, int* index) {
@@ -392,43 +398,7 @@ SyntaxNode* syntax_parse_var_decl(vector* tokens, int* index) {
             }
         }
         *index = i;
-        printf("AA\n");
-        printf("%s", syntax_print_tree(vs).cstr);
-        printf("AA\n");
         return vs;
-        if(t->type != T_IDENTIFIER) {
-            string s = string_from_lit("Expected identifier after var keyword, but instead got token ");
-            string_concat(&s, token_print(t));
-            string_pushs(&s, ".");
-            return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
-        }
-        Token idtoken = *t;
-        t = tokens_next(tokens, &i);
-        if(t->type != T_EQ) {
-            string s = string_from_lit("Expected EQUALS (=) in variable declaration, but instead got token ");
-            string_concat(&s, token_print(t));
-            string_pushs(&s, ".");
-            return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
-        }
-        SyntaxNode* sn = syntax_parse_expr(tokens, &i);
-        if(sn->type == P_ERROR) {
-            string s = string_from_string(sn->token.str);
-            string_pushs(&s, " Variable declaration incomplete.");
-            sn->token.str = s.cstr;
-            return sn;   
-        }
-        t = tokens_next(tokens, &i);
-        if(t->type != T_SC) {
-            string s = string_from_lit("Expected SEMICOLON (;) in variable declaration, but instead got token ");
-            string_concat(&s, token_print(t));
-            string_pushs(&s, ".");
-            syntax_free_node(sn);
-            return syntax_new_error_node(s.cstr, t->pos, t->pos + strlen(t->str) - 1);
-        }
-        SyntaxNode* vardecl = syntax_new_node(P_VAR_DECL, idtoken);
-        syntax_node_add_child(vardecl, sn);
-        *index = i;
-        return vardecl;
     }
     string s = string_from_lit("Expected KEYWORD (var) for variable declaration, but instead got token ");
     string_concat(&s, token_print(t));
@@ -446,6 +416,12 @@ SyntaxNode* syntax_parse_statement(vector* tokens, int* index) {
     printf("B %s", syntax_print_tree(sn).cstr);
     syntax_free_node(sn);
     sn = syntax_parse_var_set_stm(tokens, &i);
+    if(sn->type != P_ERROR) {
+        *index = i;
+        return sn;
+    }
+    syntax_free_node(sn);
+    sn = syntax_parse_scan_decl(tokens, &i);
     if(sn->type != P_ERROR) {
         *index = i;
         return sn;

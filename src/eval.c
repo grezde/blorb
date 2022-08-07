@@ -115,17 +115,50 @@ void eval_statement_file(SyntaxNode* sn) {
     sm.vars = vector_new(sizeof(Variable));
     for(int i=0; i<sn->child_nodes.length; i++) {
         SyntaxNode* stm = vector_item(&(sn->child_nodes), i);
-        if(stm->type == P_VAR_DECL) {
-            SyntaxNode* expr = vector_item(&(stm->child_nodes), 0);
-            int a = eval_expr(expr, &sm);
-            const char* er = eval_context_get_error(&sm);
-            if(er != NULL) {
-                printf("EVALUATION ERROR: %s\n", er+1);
-                free((void*)er);
+        if(stm->type == P_SCAN_DECL) {
+            SyntaxNode* varname = vector_item(&(stm->child_nodes), 0);
+            Variable* v = eval_var_from_context(&sm, varname->token.str);
+            if(v == NULL) {
+                printf("EVALUATION ERROR: Variable %s was not declared.\n", varname->token.str);
                 vector_free(&sm.vars);
                 return;
             }
-            eval_context_set_var(&sm, stm->token.str, a);
+            int d;
+            scanf("%d", &d);
+            eval_context_set_var(&sm, varname->token.str, d);
+        }
+        else if(stm->type == P_VAR_DECL) {
+            for(int j=0; j<stm->child_nodes.length; j++) {
+                SyntaxNode* stm2 = vector_item(&(stm->child_nodes), j);
+                if(stm2->type == P_VAR_NAME) {
+                    Variable* v = eval_var_from_context(&sm, stm2->token.str);
+                    if(v != NULL) {
+                        printf("EVALUATION ERROR: Variable %s already declared.\n", stm2->token.str);
+                        vector_free(&sm.vars);
+                        return;
+                    }
+                    eval_context_set_var(&sm, stm2->token.str, 0);
+                }
+                else {
+                    SyntaxNode* varname = vector_item(&(stm2->child_nodes), 0);
+                    SyntaxNode* expr = vector_item(&(stm2->child_nodes), 1);
+                    int a = eval_expr(expr, &sm);
+                    const char* er = eval_context_get_error(&sm);
+                    if(er != NULL) {
+                        printf("EVALUATION ERROR: %s\n", er+1);
+                        free((void*)er);
+                        vector_free(&sm.vars);
+                        return;
+                    }
+                    Variable* v = eval_var_from_context(&sm, stm2->token.str);
+                    if(v != NULL) {
+                        printf("EVALUATION ERROR: Variable %s already declared.\n", stm2->token.str);
+                        vector_free(&sm.vars);
+                        return;
+                    }
+                    eval_context_set_var(&sm, varname->token.str, a);
+                }
+            }
         }
         else if(stm->type == P_PRINT_DECL) {
             SyntaxNode* expr = vector_item(&(stm->child_nodes), 0);
@@ -140,7 +173,8 @@ void eval_statement_file(SyntaxNode* sn) {
             printf("%d\n", a);
         }
         else if(stm->type == P_VAR_SET) {
-            SyntaxNode* expr = vector_item(&(stm->child_nodes), 0);
+            SyntaxNode* varname = vector_item(&(stm->child_nodes), 0);
+            SyntaxNode* expr = vector_item(&(stm->child_nodes), 1);
             int a = eval_expr(expr, &sm);
             const char* er = eval_context_get_error(&sm);
             if(er != NULL) {
@@ -149,7 +183,13 @@ void eval_statement_file(SyntaxNode* sn) {
                 vector_free(&sm.vars);
                 return;
             }
-            eval_context_set_var(&sm, stm->token.str, a);
+            Variable* v = eval_var_from_context(&sm, varname->token.str);
+            if(v == NULL) {
+                printf("EVALUATION ERROR: Variable %s was not declared.\n", varname->token.str);
+                vector_free(&sm.vars);
+                return;
+            }
+            eval_context_set_var(&sm, varname->token.str, a);
         }
     }
     vector_free(&sm.vars);

@@ -46,8 +46,8 @@ typedef struct {
     int row;
 } FullPosition;
 
-static const int TOKEN_KEYWORDS_LEN = 2;
-static const char* TOKEN_KEYWORDS[] = { "var", "print" };
+static const int TOKEN_KEYWORDS_LEN = 3;
+static const char* TOKEN_KEYWORDS[] = { "var", "print", "scan" };
 
 Token token_next(const char* str, int* index, vector* ers);
 vector tokens_all(const char* str, vector* ers);

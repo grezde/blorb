@@ -1,10 +1,7 @@
 
-var a = 8, b, c;
-var b = 2*(1-a);
-a = 5+5+10;
-
-print b;
-print a;
-
-print -b*4;
-print b - a;
+var a = 5, b = 7;
+var c, d, e, f;
+scan c;
+print c+a;
+scan d;
+print d*2 + b/2;
