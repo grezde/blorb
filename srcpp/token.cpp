@@ -115,6 +115,7 @@ vector<Token> Token::all(const string& input) {
         ts.push_back(t);
         t = next(input, index);
     }
+    ts.push_back(t);
     return ts;
 }
 
