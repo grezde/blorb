@@ -1,5 +1,6 @@
 #include "file.hpp"
 #include <fstream>
+#include "eval.hpp"
 
 string* File::readContents(const string& filename) {
     std::ifstream fin(filename);
@@ -70,6 +71,18 @@ File::File(const string filename)
         if(SHOW_HEADERS)
             cout << "-- SYNTAX TREE --" << endl;
         cout << tree->toString();
+        if(SHOW_HEADERS)
+            cout << endl;
+    }
+
+    if(SHOW_EVAL) {
+        if(SHOW_HEADERS)
+            cout << "-- EVALUATION --" << endl;
+        EvalContext ctx;
+        ctx.error = nullptr;
+        evalStatement(ctx, tree);
+        if(ctx.error != nullptr)
+            cout << "EVALUATION ERROR: " << ctx.error->msg << endl;
         if(SHOW_HEADERS)
             cout << endl;
     }

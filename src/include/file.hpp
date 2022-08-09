@@ -7,6 +7,7 @@ struct File {
     static const bool SHOW_CONTENTS = true;
     static const bool SHOW_TOKENS = true;
     static const bool SHOW_SYNTAX_TREE = true; 
+    static const bool SHOW_EVAL = true; 
 
     File(const string filename);
     ~File();

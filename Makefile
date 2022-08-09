@@ -1,39 +1,19 @@
 
-FLAGS := 
-SOURCES := $(wildcard src/*.c)
-OBJECTS := $(patsubst src/%.c,%.o,$(SOURCES))
-OBJECTSREL := $(patsubst src/%.c,temp/%.o,$(SOURCES))
+FLAGS :=
+SOURCES := $(wildcard src/*.cpp)
+OBJECTS := $(patsubst src/%.cpp,%.o,$(SOURCES))
+OBJECTSREL := $(patsubst src/%.cpp,temp/%.o,$(SOURCES))
 
-FLAGSPP :=
-SOURCESPP := $(wildcard srcpp/*.cpp)
-OBJECTSPP := $(patsubst srcpp/%.cpp,pp/%.o,$(SOURCESPP))
-OBJECTSRELPP := $(patsubst srcpp/%.cpp,temppp/%.o,$(SOURCESPP))
-
-
-%.o: src/%.c
+%.o: src/%.cpp
 	gcc $(FLAGS) -Isrc/include -c $< -o temp/$@
 
-pp/%.o: srcpp/%.cpp
-	g++ $(FLAGSPP) -Isrcpp/include -c $< -o temp$@
-
-maketest:
-	echo $(OBJECTS)
-	echo $(OBJECTSPP)
-
 build: $(OBJECTS)
-	gcc $(OBJECTSREL) $(FLAGS) -o blorbc  
-
-buildpp: $(OBJECTSPP)
-	g++ $(OBJECTSRELPP) $(FLAGSPP) -o blorbc
-
-runpp: buildpp
-	./blorbc test.b
+	g++ $(OBJECTSREL) $(FLAGS) -o blorbc  
 
 clean:
 	rm -rf temp
-	rm -rf temppp
-	mkdir temp
-	mkdir temppp
 
-run: build
-	./blorbc test.b
+run:
+	clear
+	make build
+	./blorbc examples/test.b

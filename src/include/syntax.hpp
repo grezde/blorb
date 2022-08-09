@@ -11,15 +11,15 @@ struct SyntaxNode {
     static constexpr const char* INDENT = "   ";
 
     enum Type {
-        ERROR = 0,          // Textual
-        STM_LIST = 1,       // List
-        STM_PRINT = 2,      // OneChild
-        STM_SCAN = 3,       // Textual
-        VAR_SET = 4,        // Set
-        VAR_DECL = 5,       // List with Textual or Set
-        EXPR_BIN_OP = 6,    // BinaryOp
-        EXPR_UN_OP = 7,     // UnaryOp
-        EXPR_NUM_LIT = 8,   // Textual
+        ERROR,          // Textual
+        STM_LIST,       // List
+        STM_PRINT,      // OneChild
+        STM_SCAN,       // Textual
+        VAR_SET,        // Set
+        VAR_DECL,       // List with Textual or Set
+        EXPR_BIN_OP,    // BinaryOp
+        EXPR_UN_OP,     // UnaryOp
+        EXPR_NUM_LIT,   // Textual
         EXPR_VAR        // Textual
     };
     Type type;
