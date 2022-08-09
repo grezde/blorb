@@ -153,6 +153,13 @@ namespace parse {
         return new TextualSN(SyntaxNode::STM_SCAN, vname, index0, index++);
     }
 
+    SyntaxNode* compoundStm(Tokens tokens, int& index) {
+        if(tokens[index].type != Token::O_CURLY)
+            return ExpectedSyntaxError("COPEN CURLY ({) token in compound statement", tokens[index], index);
+        index++;
+        return statements(tokens, index, Token::C_CURLY);
+    }
+
     SyntaxNode* statement(Tokens tokens, int& index) {
         // we predetermine what type of statement is based on the beggining
         // instead of trying them all
@@ -169,6 +176,8 @@ namespace parse {
         }
         if(tokens[index].type == Token::IDENTIFIER)
             return varSetStm(tokens, index);
+        if(tokens[index].type == Token::O_CURLY)
+            return compoundStm(tokens, index);
         return ExpectedSyntaxError("statement", tokens[index], index);
     }
 
@@ -182,6 +191,7 @@ namespace parse {
             }
             ns->appendChild(sn);
         }
+        index++;
         return ns;
     }
 

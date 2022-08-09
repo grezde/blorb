@@ -1,0 +1,8 @@
+
+var qq = 6;
+# print qq;
+
+{
+    var qq = 7;
+    print qq;
+}

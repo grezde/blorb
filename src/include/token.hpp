@@ -8,6 +8,7 @@ struct Token {
         " NUMBER", " KEYWORD", " IDENT", 
         " PLUS", " MINUS", " STAR", " DIV", 
         " OPEN PAREN", " CLOSING PAREN", 
+        " OPEN CURLY", " CLOSING CURLY",
         " EQUALS", " SEMICOLON", " COMMA" 
     };
 
@@ -21,6 +22,7 @@ struct Token {
         NUM_LIT, KEYWORD, IDENTIFIER,
         PLUS, MINUS, STAR, DIV,
         O_PAREN, C_PAREN,
+        O_CURLY, C_CURLY,
         EQ, SC, COMMA
     };
 

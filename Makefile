@@ -16,4 +16,4 @@ clean:
 run:
 	clear
 	make build
-	./blorbc examples/test.b
+	./blorbc examples/test.txt

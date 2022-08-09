@@ -31,12 +31,18 @@ bool Token::isNum(const char& c) {
 Token Token::next(const string& input, int& index) {
     Token a;
     a.type = ERROR; 
-    a.position = index; 
     a.text = "";
     while(index < input.length() && isWhiteSpace(input[index]))
         index++;
+    a.position = index; 
     if(index >= input.length() || input[index] == '\0' || input[index] == EOF)
         a.type = T_EOF;
+    else if(input[index] == '#') {
+        do index++;
+        while(index < input.length() && input[index] != '\n');
+        index++;
+        return next(input, index);
+    }
     else if(isNum(input[index])) {
         while(isNum(input[index]))
             a.text += input[index++];
@@ -94,7 +100,16 @@ Token Token::next(const string& input, int& index) {
         a.type = COMMA;
         a.text = ",";
         index++;
-    } else {
+    } else if(input[index] == '{') {
+        a.type = O_CURLY;
+        a.text = "{";
+        index++;
+    } else if(input[index] == '}') {
+        a.type = C_CURLY;
+        a.text = "}";
+        index++;
+    }
+    else {
         a.text = "Unexpected character '";
         a.text += input[index++];
         a.text += "'.";

@@ -30,14 +30,11 @@ File::File(const string filename)
             newlines.push_back(i+1);
     newlines.push_back(contents.length());
 
-    if(SHOW_HEADERS)
-        cout << endl;
+    std::ofstream fout("debug.txt");
+
     if(SHOW_CONTENTS) {
-        if(SHOW_HEADERS)
-            cout << "-- FILE CONTENTS --" << endl;
-        cout << contents << endl;
-        if(SHOW_HEADERS)
-            cout << endl;
+        fout << "-- FILE CONTENTS --" << endl;
+        fout << contents << endl << endl;
     }
 
     tokens = Token::all(contents);
@@ -55,37 +52,19 @@ File::File(const string filename)
         error = ss.str();
         return;
     }
-    if(SHOW_TOKENS) {
-        if(SHOW_HEADERS)
-            cout << "-- TOKENS --" << endl;
-        cout << Token::printAll(tokens);
-        if(SHOW_HEADERS)
-            cout << endl;
-    }
-
-    for(int i=0; i<7; i++)
-        cout << SyntaxNode::PRINTS[i] << endl;
+    fout << "-- TOKENS --" << endl;
+    fout << Token::printAll(tokens) << endl;
 
     tree = parse::file(tokens);
-    if(SHOW_SYNTAX_TREE) {
-        if(SHOW_HEADERS)
-            cout << "-- SYNTAX TREE --" << endl;
-        cout << tree->toString();
-        if(SHOW_HEADERS)
-            cout << endl;
-    }
+    fout << "-- SYNTAX TREE --" << endl;
+    fout << tree->toString() << endl;
 
-    if(SHOW_EVAL) {
-        if(SHOW_HEADERS)
-            cout << "-- EVALUATION --" << endl;
-        EvalContext ctx;
-        ctx.error = nullptr;
-        evalStatement(ctx, tree);
-        if(ctx.error != nullptr)
-            cout << "EVALUATION ERROR: " << ctx.error->msg << endl;
-        if(SHOW_HEADERS)
-            cout << endl;
-    }
+    EvalContext ctx;
+    ctx.error = nullptr;
+    evalStatement(ctx, tree);
+    if(ctx.error != nullptr)
+        cout << "EVALUATION ERROR: " << ctx.error->msg << endl;
+
 }
 
 File::~File() {
