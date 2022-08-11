@@ -4,6 +4,7 @@ namespace parse {
 
     typedef const vector<Token>& Tokens;
 
+    SyntaxNode* typexpr(Tokens tokens, int& index);
     SyntaxNode* expressionRecursive(Tokens tokens, int& index, int prec, SyntaxNode* startingNode);
     SyntaxNode* expressionStart(Tokens tokens, int& index);
     SyntaxNode* expression(Tokens tokens, int& index);

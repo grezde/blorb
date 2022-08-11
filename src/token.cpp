@@ -28,6 +28,60 @@ bool Token::isNum(const char& c) {
     return '0' <= c && c <= '9';
 }
 
+char Token::escape(const char& c) {
+    switch(c) {
+        case '0':   return '\0';
+        case 'n':   return '\n';
+        case '\'':  return '\'';
+        case '"':   return '"';
+        case 'r':   return '\r';
+        case 't':   return '\t';
+        case '\\':  return '\\';
+        case '\n':  return '\n';
+        default:    return c;  
+    }
+}
+
+Token Token::nextStrLiteral(const string& input, int& index, Token::Type type, string ername) {
+    Token a;
+    a.type = ERROR;
+    a.text = "";
+    a.position = index;
+    const char chr = input[index];
+    bool esc = false;
+    while(input[++index] != chr) {
+        if(input[index] == EOF) {
+            osstream ss;
+            ss << "Unexpected end of input in " << ername << " literal " << chr << a.text << chr;
+            a.text = ss.str();
+            return a;
+        }
+        if(input[index] == '\n' && !esc) {
+            osstream ss;
+            ss << "Unexpected new line in " << ername << " literal " << chr << a.text << chr << ". Use \\ to mark a new line character";
+            a.text = ss.str();
+            return a;
+        }
+        if(input[index] == '\\')
+            esc = true;
+        else if(esc) {
+            a.text += escape(input[index]);
+            esc = false;
+        } else {
+            a.text += "a";
+        }
+    };
+    index++;
+    if(type == CHAR_LIT && a.text.length() != 1) {
+        osstream ss;
+        ss << "Character literal '" << a.text << "' must have exactly 1 charcter";
+        a.text = ss.str();
+        return a;
+    }
+    a.type = type;
+    return a;
+}
+
 Token Token::next(const string& input, int& index) {
     Token a;
     a.type = ERROR; 
@@ -39,10 +93,14 @@ Token Token::next(const string& input, int& index) {
         a.type = T_EOF;
     else if(input[index] == '#') {
         do index++;
-        while(index < input.length() && input[index] != '\n');
+        while(input[index] != EOF && input[index] != '\n');
         index++;
         return next(input, index);
     }
+    else if(input[index] == '"')
+        return nextStrLiteral(input, index, STR_LIT, "string");
+    else if(input[index] == '\'') 
+        return nextStrLiteral(input, index, CHAR_LIT, "char");
     else if(isNum(input[index])) {
         while(isNum(input[index]))
             a.text += input[index++];

@@ -53,15 +53,15 @@ File::File(const string filename)
         return;
     }
     fout << "-- TOKENS --" << endl;
-    fout << Token::printAll(tokens) << endl;
+    fout << Token::printAll(tokens) << std::endl;
 
     tree = parse::file(tokens);
     fout << "-- SYNTAX TREE --" << endl;
-    fout << tree->toString() << endl;
+    fout << tree->toString() << std::endl;
 
     EvalContext ctx;
     ctx.error = nullptr;
-    evalStatement(ctx, tree);
+    eval::statement(ctx, tree);
     if(ctx.error != nullptr)
         cout << "EVALUATION ERROR: " << ctx.error->msg << endl;
 

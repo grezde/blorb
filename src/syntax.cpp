@@ -66,9 +66,36 @@ string UnaryOpSN::toString(int indent) {
     osstream ss;
     for(int i=0; i<indent; i++)
         ss << INDENT;
-    ss << PRINTS[type] << " (" << Token::PRINTS[opType] << "):" << endl;
+    char* a = Token::PRINTS[opType][0] == ' ' ? (char*)Token::PRINTS[opType] + 1 : (char*)Token::PRINTS[opType];
+    ss << PRINTS[type] << " (" << a << "):" << endl;
     ss << inside->toString(indent+1);
     return ss.str();
+}
+
+string VarDeclSN::toString(int indent) {
+    osstream ss;
+    for(int i=0; i<indent; i++)
+        ss << INDENT;
+    ss << PRINTS[type] << ":" << endl;
+    ss << typexp->toString(indent+1);
+    for(SyntaxNode* sn : assignements)
+        ss << sn->toString(indent+1);
+    return ss.str();
+};
+
+void VarDeclSN::appendChild(SyntaxNode* child) {
+    assignements.push_back(child);
+    if(child->endPos > endPos)
+        endPos = child->endPos;
+    if(child->startPos < startPos)
+        startPos = child->startPos;
+};
+
+
+VarDeclSN::~VarDeclSN() {
+    delete typexp;
+    for(SyntaxNode* sn : assignements)
+        delete sn;
 }
 
 void ListSN::appendChild(SyntaxNode* child) {

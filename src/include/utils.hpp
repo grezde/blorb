@@ -10,6 +10,7 @@ using std::vector;
 const char endl = '\n';
 using std::cout;
 using std::map;
+using std::pair;
 typedef std::ostringstream osstream;
 typedef std::istringstream isstream;
 

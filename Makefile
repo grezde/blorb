@@ -1,5 +1,5 @@
 
-FLAGS :=
+FLAGS := 
 SOURCES := $(wildcard src/*.cpp)
 OBJECTS := $(patsubst src/%.cpp,%.o,$(SOURCES))
 OBJECTSREL := $(patsubst src/%.cpp,temp/%.o,$(SOURCES))

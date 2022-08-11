@@ -6,21 +6,26 @@ struct SyntaxNode {
     static constexpr const char* PRINTS[] = { 
         "ERROR", "LIST",
         "PRINT", "SCAN", "VAR SET", "VAR DECL", 
-        "BIN OP", "UN OP", "NUMBER", "VAR"
+        "BIN OP", "UN OP", 
+        "NUMBER", "CHAR", "STRING",
+        "VAR", "TYPENAME"
     };
     static constexpr const char* INDENT = "   ";
 
     enum Type {
-        ERROR,          // Textual
-        STM_LIST,       // List
-        STM_PRINT,      // OneChild
-        STM_SCAN,       // Textual
-        VAR_SET,        // Set
-        VAR_DECL,       // List with Textual or Set
-        EXPR_BIN_OP,    // BinaryOp
-        EXPR_UN_OP,     // UnaryOp
-        EXPR_NUM_LIT,   // Textual
-        EXPR_VAR        // Textual
+        ERROR,           // Textual
+        STM_LIST,        // List
+        STM_PRINT,       // OneChild
+        STM_SCAN,        // Textual
+        VAR_SET,         // Set
+        VAR_DECL,        // VarDecl
+        EXPR_BIN_OP,     // BinaryOp
+        EXPR_UN_OP,      // UnaryOp
+        EXPR_NUM_LIT,    // Textual
+        EXPR_CHAR_LIT,   // Textual
+        EXPR_STRING_LIT, // Textual
+        EXPR_VAR,        // Textual
+        TYPE_NAME        // Textual
     };
     Type type;
     int startPos, endPos;
@@ -32,6 +37,15 @@ struct SyntaxNode {
 
 SyntaxNode* ExpectedSyntaxError(string what, const Token& token, int startPos, int endPos);
 SyntaxNode* ExpectedSyntaxError(string what, const Token& token, int pos);
+
+struct VarDeclSN : SyntaxNode {
+    SyntaxNode* typexp;
+    vector<SyntaxNode*> assignements;
+    VarDeclSN(SyntaxNode* typexp, int index) : SyntaxNode(SyntaxNode::VAR_DECL, index), typexp(typexp) {};
+    void appendChild(SyntaxNode* child);
+    string toString(int indent = 0);
+    ~VarDeclSN();
+};
 
 struct SetSN : SyntaxNode {
     SyntaxNode* value;

@@ -1,8 +1,18 @@
 
-var qq = 6;
-# print qq;
+print 6 + 7 + 8;
+print 6 + 7 + 8*32+12;
+
+char c = 'b';
+int32 q = 7;
+int32 qqq = q+5;
+print qqq;
+
+int32 qq = 5+6;
 
 {
-    var qq = 7;
+    print 1+2;
+    int32 qq = 7;
     print qq;
 }
+
+print 1+2;
