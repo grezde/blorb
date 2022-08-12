@@ -1,18 +1,23 @@
 
-print 6 + 7 + 8;
-print 6 + 7 + 8*32+12;
+string s = "asd";
+s = 'q' + s + ":\n";
+print s;
+print 6+4*2;
 
-char c = 'b';
-int32 q = 7;
-int32 qqq = q+5;
-print qqq;
-
-int32 qq = 5+6;
-
-{
-    print 1+2;
-    int32 qq = 7;
-    print qq;
-}
-
-print 1+2;
+# print 6;
+# char mychar = 'a', mychar2 = 'J';
+# print mychar;
+# print mychar2;
+# print 6 + 7 + 'a';
+# print 6 + 7 + 8*32+12;
+# 
+# char scopedOne = 'Q';
+# print scopedOne;
+# 
+# {
+#     int32 scopedOne;
+#     scan scopedOne;
+#     print scopedOne+12;
+# }
+# 
+# print 1+2;

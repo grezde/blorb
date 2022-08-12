@@ -68,7 +68,7 @@ Token Token::nextStrLiteral(const string& input, int& index, Token::Type type, s
             a.text += escape(input[index]);
             esc = false;
         } else {
-            a.text += "a";
+            a.text += input[index];
         }
     };
     index++;

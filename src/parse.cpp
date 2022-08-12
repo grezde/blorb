@@ -218,8 +218,6 @@ namespace parse {
         ListSN* ns = new ListSN(SyntaxNode::STM_LIST, index);
         while(tokens[index].type != endingToken) {
             SyntaxNode* sn = statement(tokens, index);
-            cout << "-- A:" << endl;
-            cout << sn->toString();
             if(sn->type == SyntaxNode::ERROR) {
                 delete ns;
                 return sn;
@@ -227,7 +225,6 @@ namespace parse {
             ns->appendChild(sn);
         }
         index++;
-        cout << "-- FINISHED" << endl;
         return ns;
     }
 

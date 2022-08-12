@@ -7,10 +7,6 @@ int main(int argc, const char** argv) {
         cout << "COMPILER ERROR: Wrong usage." << endl;
         return 1;
     }
-    struct x {
-        char c;
-        int b;
-    };
     //*
     try {
         File f(args[0]);
