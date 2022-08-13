@@ -103,30 +103,20 @@ namespace parse {
     }
 
     SyntaxNode* varDeclStm(Tokens tokens, int& index) {
-        cout << "VAR DECL: " << index << endl;
         int index0 = index;
         SyntaxNode* typexp = typexpr(tokens, index);
         if(typexp->type == SyntaxNode::ERROR)
             return typexp;
-        cout << "VAR DECL 2: " << index << endl;
-        cout << "VAR DECL 2: " << typexp->toString();
         VarDeclSN* decls = new VarDeclSN(typexp, index0);
         index--;
-        cout << "VD: WTF IS THIS" << endl;
         do {
             if(tokens[++index].type != Token::IDENTIFIER)
                 return ExpectedSyntaxError("variable name in variable declaration", tokens[index], index0, index);
-            cout << "VD: ANOTHER ONE" << endl;
             int index1 = index;
             SyntaxNode* sn = varSet(tokens, index);
-            if(sn->type != SyntaxNode::ERROR) {
-                cout << "VD: VAR SET GOOD" << endl;
-                cout << "VD: ^ " << sn->toString();
+            if(sn->type != SyntaxNode::ERROR)
                 decls->appendChild(sn);
-            }
             else {
-                cout << "VD: VAR SET PARSE FAILED" << endl;
-                cout << "VD: ^ " << sn->toString();
                 delete sn;
                 index = index1;
                 decls->appendChild(new TextualSN(SyntaxNode::EXPR_VAR, tokens[index++].text, index));
@@ -155,13 +145,21 @@ namespace parse {
     SyntaxNode* printStm(Tokens tokens, int& index) {
         if(!(tokens[index].type == Token::KEYWORD && tokens[index].text == string("print")))
             return ExpectedSyntaxError("'print' keyword in print statement", tokens[index], index);
-        int index0 = index++;
-        SyntaxNode* sn = expression(tokens, index);
-        if(sn->type == SyntaxNode::ERROR)
-            return sn;
+        int index0 = index;
+        ListSN* ls = new ListSN(SyntaxNode::STM_PRINT, index0);
+        do {
+            index++;
+            SyntaxNode* sn = expression(tokens, index);
+            if(sn->type == SyntaxNode::ERROR) {
+                delete ls;
+                return sn;
+            }
+            ls->appendChild(sn);
+        } while(tokens[index].type == Token::COMMA);
         if(tokens[index].type != Token::SC)
             return ExpectedSyntaxError("SEMICOLON (;) in print statement", tokens[index], index);
-        return new OneChildSN(SyntaxNode::STM_PRINT, sn, index0, index++);
+        index++;
+        return ls;
     }
 
     SyntaxNode* scanStm(Tokens tokens, int& index) {
@@ -184,6 +182,38 @@ namespace parse {
         return statements(tokens, index, Token::C_CURLY);
     }
 
+    SyntaxNode* ifElseStm(Tokens tokens, int& index) {
+        int index0 = index;
+        if(!(tokens[index].type == Token::KEYWORD && tokens[index].text == string("if")))
+            return ExpectedSyntaxError("'if' keyword in if statement", tokens[index], index);
+        index++;
+        if(tokens[index].type != Token::O_PAREN)
+            return ExpectedSyntaxError("open parenthesis keyword in if statement", tokens[index], index);
+        index++;
+        SyntaxNode* expr = expression(tokens, index);
+        if(expr->type == SyntaxNode::ERROR)
+            return expr;
+        if(tokens[index].type != Token::C_PAREN) {
+            delete expr;
+            return ExpectedSyntaxError("closing parenthesis keyword in if statement", tokens[index], index);
+        }
+        index++;
+        SyntaxNode* stm = statement(tokens, index);
+        if(stm->type == SyntaxNode::ERROR) {
+            delete expr;
+            return stm;
+        }
+        if(!(tokens[index].type == Token::KEYWORD && tokens[index].text == string("else")))
+            return new IfElseSN(expr, stm, index0);
+        index++;
+        SyntaxNode* stm2 = statement(tokens, index);
+        if(stm2->type == SyntaxNode::ERROR) {
+            delete expr; delete stm;
+            return stm2;
+        }
+        return new IfElseSN(expr, stm, stm2, index0);
+    }
+
     SyntaxNode* statement(Tokens tokens, int& index) {
         // we predetermine what type of statement is based on the beggining
         // instead of trying them all
@@ -192,8 +222,9 @@ namespace parse {
                 return scanStm(tokens, index);
             if(tokens[index].text == string("print"))
                 return printStm(tokens, index);
-            if(tokens[index].text == string("var"))
-                return varDeclStm(tokens, index);
+            cout << tokens[index].text << endl;
+            if(tokens[index].text == string("if")) 
+                return ifElseStm(tokens, index);
             osstream ss;
             ss << "Unexpected keyword '" << tokens[index].text << "' at the beggining of statement";
             return new TextualSN(SyntaxNode::ERROR, ss.str(), index);

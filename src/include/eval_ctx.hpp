@@ -11,7 +11,7 @@ struct TypeInfo {
     string name;
     int byteSize;
     TypeInfo(Type type, string name, int byteSize) : type(type), name(name), byteSize(byteSize) {};
-    PrimitiveTypeInfo* asPrimitive() { return (PrimitiveTypeInfo*)this; }
+    PrimitiveTypeInfo* asPrimitive();
     virtual void* newInstance();
     virtual void deleteInstance(void* v);
     virtual void* copyInstance(void* v);
@@ -47,7 +47,7 @@ struct PrimitiveTypeInfo : TypeInfo {
     void fromLL(long long value, void* ptr);
     static Variable tryCoerce(Variable v, PrimitiveTypeInfo* newtypeinfo);
     static Variable tryUnaryOp(Token::Type opType, Variable v);
-    static Variable tryBinaryOp(Token::Type opType, Variable a, Variable b);
+    static Variable tryBinaryOp(Token::Type opType, Variable a, Variable b, TypeInfo* booltype);
 };
 
 struct EvalContext {

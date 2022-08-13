@@ -8,14 +8,14 @@ struct SyntaxNode {
         "PRINT", "SCAN", "VAR SET", "VAR DECL", 
         "BIN OP", "UN OP", 
         "NUMBER", "CHAR", "STRING",
-        "VAR", "TYPENAME"
+        "VAR", "TYPENAME", "IF-ELSE", "WHILE"
     };
-    static constexpr const char* INDENT = "   ";
+    static void printIndent(std::ostream& ss, int indent);
 
     enum Type {
         ERROR,           // Textual
         STM_LIST,        // List
-        STM_PRINT,       // OneChild
+        STM_PRINT,       // List
         STM_SCAN,        // Textual
         VAR_SET,         // Set
         VAR_DECL,        // VarDecl
@@ -25,7 +25,9 @@ struct SyntaxNode {
         EXPR_CHAR_LIT,   // Textual
         EXPR_STRING_LIT, // Textual
         EXPR_VAR,        // Textual
-        TYPE_NAME        // Textual
+        TYPE_NAME,       // Textual
+        IF_ELSE,         // IfElse
+        WHILE            // While
     };
     Type type;
     int startPos, endPos;
@@ -37,6 +39,18 @@ struct SyntaxNode {
 
 SyntaxNode* ExpectedSyntaxError(string what, const Token& token, int startPos, int endPos);
 SyntaxNode* ExpectedSyntaxError(string what, const Token& token, int pos);
+
+struct IfElseSN : SyntaxNode {
+    SyntaxNode* expr;
+    SyntaxNode* ifStm;
+    SyntaxNode* elseStm;
+    IfElseSN(SyntaxNode* expr, SyntaxNode* ifStm, int index) 
+        : SyntaxNode(SyntaxNode::IF_ELSE, index, ifStm->endPos), expr(expr), ifStm(ifStm), elseStm(nullptr) {};
+    IfElseSN(SyntaxNode* expr, SyntaxNode* ifStm, SyntaxNode* elseStm, int index) 
+        : SyntaxNode(SyntaxNode::IF_ELSE, index, elseStm->endPos), expr(expr), ifStm(ifStm), elseStm(elseStm) {};
+    ~IfElseSN();
+    string toString(int indent = 0);
+};
 
 struct VarDeclSN : SyntaxNode {
     SyntaxNode* typexp;
@@ -97,4 +111,5 @@ struct BinaryOpSN : SyntaxNode {
     static const int MAX_PRECEDENCE = 3;
     static int precedence(Token::Type op);
     static bool associativity(Token::Type op);
+    static bool isBinaryOp(Token::Type op);
 };

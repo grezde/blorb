@@ -147,9 +147,15 @@ Token Token::next(const string& input, int& index) {
         index++;
     }
     else if(input[index] == '=') {
-        a.type = EQ;
-        a.text = "=";
-        index++;
+        if(input[index+1] == '=') {
+            a.type = EQEQ;
+            a.text = "==";
+            index += 2;
+        } else {
+            a.type = EQ;
+            a.text = "=";
+            index++;
+        }
     } else if(input[index] == ';') {
         a.type = SC;
         a.text = ";";
@@ -166,6 +172,44 @@ Token Token::next(const string& input, int& index) {
         a.type = C_CURLY;
         a.text = "}";
         index++;
+    } else if(input[index] == '&' && input[index+1] == '&') {
+        a.type = ANDAND;
+        a.text = "&&";
+        index += 2;
+    } else if(input[index] == '|' && input[index+1] == '|') {
+        a.type = OROR;
+        a.text = "||";
+        index += 2;
+    } else if(input[index] == '>') {
+        if(input[index+1] == '=') {
+            a.type = GEQ;
+            a.text = ">=";
+            index += 2;
+        } else {
+            a.type = GT;
+            a.text = ">";
+            index++;
+        }
+    } else if(input[index] == '<') {
+        if(input[index+1] == '=') {
+            a.type = LEQ;
+            a.text = "<=";
+            index += 2;
+        } else {
+            a.type = LT;
+            a.text = "<";
+            index++;
+        }
+    } else if(input[index] == '!') {
+        if(input[index+1] == '=') {
+            a.type = NEQ;
+            a.text = "!=";
+            index += 2;
+        } else {
+            a.type = NEGATE;
+            a.text = "!";
+            index++;
+        }
     }
     else {
         a.text = "Unexpected character '";

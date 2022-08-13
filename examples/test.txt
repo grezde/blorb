@@ -1,23 +1,18 @@
 
-string s = "asd";
-s = 'q' + s + ":\n";
-print s;
-print 6+4*2;
+char endl = '\n';
 
-# print 6;
-# char mychar = 'a', mychar2 = 'J';
-# print mychar;
-# print mychar2;
-# print 6 + 7 + 'a';
-# print 6 + 7 + 8*32+12;
-# 
-# char scopedOne = 'Q';
-# print scopedOne;
-# 
-# {
-#     int32 scopedOne;
-#     scan scopedOne;
-#     print scopedOne+12;
-# }
-# 
-# print 1+2;
+int32 a;
+scan a;
+if(a == 1)
+    print "ONE!!\n";
+else {
+    char c;
+    print "Would you like to try again? (y/n) ";
+    scan c;
+    if(c == 'y')
+        print "Ok, time to implement while loops", endl;
+    else if(c == 'n')
+        print "Ok, bye, bye", endl;
+    else
+        print "Invalid character. Auto destruct", endl; 
+}

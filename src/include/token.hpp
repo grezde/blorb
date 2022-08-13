@@ -9,12 +9,14 @@ struct Token {
         " PLUS", " MINUS", " STAR", " DIV", 
         " OPEN PAREN", " CLOSING PAREN", 
         " OPEN CURLY", " CLOSING CURLY",
-        " EQUALS", " SEMICOLON", " COMMA"
+        " EQUALS", " SEMICOLON", " COMMA",
+        " COMPARE", " LESS THAN", " LESS OR EQUAL", " GREATER THAN", " GREATER OR EQUAL", " NOT EQUAL",
+        " NEGATE", " AND OP", " OR OP"
     };
 
-    static const int KEYWORDSN = 3;
+    static const int KEYWORDSN = 5;
     static constexpr const char* KEYWORDS[] = {
-        "var", "print", "scan"
+        "var", "print", "scan", "if", "else"
     };
     
     enum Type {
@@ -23,7 +25,9 @@ struct Token {
         PLUS, MINUS, STAR, DIV,
         O_PAREN, C_PAREN,
         O_CURLY, C_CURLY,
-        EQ, SC, COMMA
+        EQ, SC, COMMA,
+        EQEQ, LT, LEQ, GT, GEQ, NEQ,
+        NEGATE, ANDAND, OROR
     };
 
     Type type;

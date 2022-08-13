@@ -18,6 +18,12 @@ void* TypeInfo::copyInstance(void* v) {
     return v2;
 }
 
+PrimitiveTypeInfo* TypeInfo::asPrimitive() {
+    if(type != PRIMITIVE)
+        throw "Tried to call asPrimitive() on non primitive typeinfo";
+    return (PrimitiveTypeInfo*)this; 
+}
+
 void* PrimitiveTypeInfo::newInstance() {
     if(ptype == STRING)
         return new string;
@@ -178,35 +184,45 @@ Variable PrimitiveTypeInfo::tryCoerce(Variable v, PrimitiveTypeInfo* newtypeinfo
 
 Variable PrimitiveTypeInfo::tryUnaryOp(Token::Type opType, Variable v) {
     auto pt = v.typeinfo->asPrimitive()->ptype;
+    if(pt == BOOL && opType == Token::NEGATE) {
+        Variable vres = v.copy();
+        bool b = *(bool*)v.value;
+        b = !b;
+        vres.copyFrom(&b);
+        return vres;
+    }
     if(pt >= 4)
         return Variable();
     if(opType == Token::PLUS)
         return v.copy();
-    Variable vres = v.copy();
-    if(pt == INT8) {
-        auto c = *(char*)v.value;
-        c = -c;
-        vres.copyFrom(&c);
+    if(opType == Token::MINUS) {
+        Variable vres = v.copy();
+        if(pt == INT8) {
+            auto c = *(char*)v.value;
+            c = -c;
+            vres.copyFrom(&c);
+        }
+        else if(pt == INT16) {
+            auto c = *(short int*)v.value;
+            c = -c;
+            vres.copyFrom(&c);
+        }
+        else if(pt == INT32) {
+            auto c = *(int*)v.value;
+            c = -c;
+            vres.copyFrom(&c);
+        }
+        else if(pt == INT64) {
+            auto c = *(long long*)v.value;
+            c = -c;
+            vres.copyFrom(&c);
+        }
+        return vres;  
     }
-    else if(pt == INT16) {
-        auto c = *(short int*)v.value;
-        c = -c;
-        vres.copyFrom(&c);
-    }
-    else if(pt == INT32) {
-        auto c = *(int*)v.value;
-        c = -c;
-        vres.copyFrom(&c);
-    }
-    else if(pt == INT64) {
-        auto c = *(long long*)v.value;
-        c = -c;
-        vres.copyFrom(&c);
-    }
-    return vres;
+    return Variable();
 }
 
-Variable PrimitiveTypeInfo::tryBinaryOp(Token::Type opType, Variable a, Variable b) {
+Variable PrimitiveTypeInfo::tryBinaryOp(Token::Type opType, Variable a, Variable b, TypeInfo* boolType) {
     PrimitiveTypeInfo* ta = a.typeinfo->asPrimitive();
     PrimitiveTypeInfo* tb = b.typeinfo->asPrimitive();
     if(opType == Token::PLUS) {
@@ -226,10 +242,59 @@ Variable PrimitiveTypeInfo::tryBinaryOp(Token::Type opType, Variable a, Variable
             return Variable(ta, new string(v+w));
         }
     }
+    if(opType == Token::EQEQ || opType == Token::NEQ) {
+        if(ta->ptype == STRING && tb->ptype == STRING) {
+            const string v = *(string*)a.value;
+            const string w = *(string*)b.value;
+            if(opType == Token::EQEQ)
+                return Variable(boolType, new bool(v == w));
+            else
+                return Variable(boolType, new bool(v != w));
+        }
+        if(ta->ptype == BOOL && tb->ptype == BOOL) {
+            auto v = *(bool*)a.value;
+            auto w = *(bool*)b.value;
+            if(opType == Token::EQEQ)
+                return Variable(boolType, new bool(v == w));
+            else
+                return Variable(boolType, new bool(v != w));
+        }
+        if(ta->ptype == CHAR && tb->ptype == CHAR) {
+            auto v = *(char*)a.value;
+            auto w = *(char*)b.value;
+            if(opType == Token::EQEQ)
+                return Variable(boolType, new bool(v == w));
+            else
+                return Variable(boolType, new bool(v != w));
+        }
+    }
+    if(ta->ptype == BOOL && tb->ptype == BOOL) {
+        auto v = *(bool*)a.value;
+        auto w = *(bool*)b.value;
+        if(opType == Token::ANDAND)
+            return Variable(boolType, new bool(v && w));
+        if(opType == Token::OROR)
+            return Variable(boolType, new bool(v || w));
+    }
     if(ta->ptype < 4 && tb->ptype < 4) {
+        long long ca = ta->toLL(a.value), cb = tb->toLL(b.value), cc;
+        if(BinaryOpSN::isBinaryOp(opType)) {
+            Variable v(boolType);
+            bool res;
+            switch(opType) {
+                case Token::EQEQ: res = ca == cb; break;
+                case Token::NEQ:  res = ca != cb; break;
+                case Token::GT:   res = ca >  cb; break;
+                case Token::LT:   res = ca <  cb; break;
+                case Token::GEQ:  res = ca >= cb; break;
+                case Token::LEQ:  res = ca <= cb; break;
+                default:          v.free();       return Variable();
+            }
+            v.copyFrom(&res);
+            return v;
+        }
         PrimitiveTypeInfo* tc = ta->ptype > tb->ptype ? ta : tb;
         Variable v(tc);
-        long long ca = ta->toLL(a.value), cb = tb->toLL(b.value), cc;
         if(opType == Token::PLUS)
             cc = ca+cb;
         else if(opType == Token::MINUS)

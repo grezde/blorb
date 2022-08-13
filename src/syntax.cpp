@@ -10,26 +10,50 @@ SyntaxNode* ExpectedSyntaxError(string what, const Token& token, int pos) {
     return ExpectedSyntaxError(what, token, pos, pos);
 }
 
+IfElseSN::~IfElseSN() {
+    delete expr;
+    delete ifStm;
+    if(elseStm != nullptr)
+        delete elseStm;
+}
+
+void SyntaxNode::printIndent(std::ostream& ss, int indent) {
+    for(int i=0; i<indent; i++)
+        ss << "  ";
+}
+
+string IfElseSN::toString(int indent) {
+    osstream ss;
+    printIndent(ss, indent);
+    ss << "IF:" << endl << expr->toString(indent+1);
+    printIndent(ss, indent);
+    ss << "THEN:" << endl << ifStm->toString(indent+1);
+    if(elseStm != nullptr) {
+        printIndent(ss, indent);
+        ss << "ELSE:" << endl << elseStm->toString(indent+1);
+    }
+    printIndent(ss, indent);
+    ss << "END IF" << endl;
+    return ss.str();
+}
+
 string SyntaxNode::toString(int indent) {
     osstream ss;
-    for(int i=0; i<indent; i++)
-        ss << INDENT;
+    printIndent(ss, indent);
     ss << PRINTS[type] << endl;
     return ss.str();
 }
 
 string TextualSN::toString(int indent) {
     osstream ss;
-    for(int i=0; i<indent; i++)
-        ss << INDENT;
+    printIndent(ss, indent);
     ss << PRINTS[type] << " (" << text << ")" << endl;
     return ss.str();
 }
 
 string ListSN::toString(int indent) {
     osstream ss;
-    for(int i=0; i<indent; i++)
-        ss << INDENT;
+    printIndent(ss, indent);
     ss << PRINTS[type] << ":" << endl;
     for(SyntaxNode* sn : children)
         ss << sn->toString(indent+1);
@@ -38,24 +62,21 @@ string ListSN::toString(int indent) {
 
 string SetSN::toString(int indent) {
     osstream ss;
-    for(int i=0; i<indent; i++)
-        ss << INDENT;
+    printIndent(ss, indent);
     ss << PRINTS[type] << " (" << name << "):" << endl << value->toString(indent+1);
     return ss.str();
 }
 
 string OneChildSN::toString(int indent) {
     osstream ss;
-    for(int i=0; i<indent; i++)
-        ss << INDENT;
+    printIndent(ss, indent);
     ss << PRINTS[type] << ":" << endl << child->toString(indent+1);
     return ss.str();
 }
 
 string BinaryOpSN::toString(int indent) {
     osstream ss;
-    for(int i=0; i<indent; i++)
-        ss << INDENT;
+    printIndent(ss, indent);
     char* a = Token::PRINTS[opType][0] == ' ' ? (char*)Token::PRINTS[opType] + 1 : (char*)Token::PRINTS[opType];
     ss << PRINTS[type] << " (" << a << "):" << endl;
     ss << first->toString(indent+1) << second->toString(indent+1);
@@ -64,8 +85,7 @@ string BinaryOpSN::toString(int indent) {
 
 string UnaryOpSN::toString(int indent) {
     osstream ss;
-    for(int i=0; i<indent; i++)
-        ss << INDENT;
+    printIndent(ss, indent);
     char* a = Token::PRINTS[opType][0] == ' ' ? (char*)Token::PRINTS[opType] + 1 : (char*)Token::PRINTS[opType];
     ss << PRINTS[type] << " (" << a << "):" << endl;
     ss << inside->toString(indent+1);
@@ -74,8 +94,7 @@ string UnaryOpSN::toString(int indent) {
 
 string VarDeclSN::toString(int indent) {
     osstream ss;
-    for(int i=0; i<indent; i++)
-        ss << INDENT;
+    printIndent(ss, indent);
     ss << PRINTS[type] << ":" << endl;
     ss << typexp->toString(indent+1);
     for(SyntaxNode* sn : assignements)
@@ -117,10 +136,19 @@ BinaryOpSN::~BinaryOpSN() {
 
 int BinaryOpSN::precedence(Token::Type op) {
     switch(op) {
-        case Token::PLUS: case Token::MINUS:
+        case Token::ANDAND: 
             return 1;
-        case Token::STAR: case Token::DIV:
+        case Token::OROR:
             return 2;
+        case Token::EQEQ:  case Token::NEQ:
+            return 3;
+        case Token::LEQ:   case Token::GEQ:
+        case Token::LT:    case Token::GT:
+            return 4;
+        case Token::PLUS:  case Token::MINUS:
+            return 5;
+        case Token::STAR:  case Token::DIV:
+            return 6;
         default:
             return -1;
     }
@@ -129,10 +157,19 @@ bool BinaryOpSN::associativity(Token::Type op) {
     switch(op) {
         case Token::PLUS: case Token::MINUS:
         case Token::STAR: case Token::DIV:
+        case Token::LEQ:  case Token::GEQ:
+        case Token::LT:   case Token::GT:
+        case Token::EQEQ: case Token::NEQ:
             return true;
         default:
             return false;
     }
+}
+bool BinaryOpSN::isBinaryOp(Token::Type op) {
+    return 
+        op == Token::EQEQ || op == Token::NEQ || 
+        op == Token::GT   || op == Token::LT  ||
+        op == Token::GEQ  || op == Token::LEQ;
 }
 
 UnaryOpSN::UnaryOpSN(Token::Type opType, SyntaxNode* inside, bool prefix)
@@ -146,6 +183,7 @@ UnaryOpSN::~UnaryOpSN() {
 int UnaryOpSN::precedence(Token::Type op) {
     switch(op) {
         case Token::PLUS: case Token::MINUS:
+        case Token::NEGATE:
             return 1;
         default:
             return -1;
