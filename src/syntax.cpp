@@ -22,21 +22,6 @@ void SyntaxNode::printIndent(std::ostream& ss, int indent) {
         ss << "  ";
 }
 
-string IfElseSN::toString(int indent) {
-    osstream ss;
-    printIndent(ss, indent);
-    ss << "IF:" << endl << expr->toString(indent+1);
-    printIndent(ss, indent);
-    ss << "THEN:" << endl << ifStm->toString(indent+1);
-    if(elseStm != nullptr) {
-        printIndent(ss, indent);
-        ss << "ELSE:" << endl << elseStm->toString(indent+1);
-    }
-    printIndent(ss, indent);
-    ss << "END IF" << endl;
-    return ss.str();
-}
-
 string SyntaxNode::toString(int indent) {
     osstream ss;
     printIndent(ss, indent);
@@ -100,7 +85,38 @@ string VarDeclSN::toString(int indent) {
     for(SyntaxNode* sn : assignements)
         ss << sn->toString(indent+1);
     return ss.str();
-};
+}
+
+string IfElseSN::toString(int indent) {
+    osstream ss;
+    printIndent(ss, indent);
+    ss << "IF:" << endl << expr->toString(indent+1);
+    printIndent(ss, indent);
+    ss << "THEN:" << endl << ifStm->toString(indent+1);
+    if(elseStm != nullptr) {
+        printIndent(ss, indent);
+        ss << "ELSE:" << endl << elseStm->toString(indent+1);
+    }
+    printIndent(ss, indent);
+    ss << "END IF" << endl;
+    return ss.str();
+}
+
+string WhileSN::toString(int indent) {
+    osstream ss;
+    printIndent(ss, indent);
+    ss << "WHILE:" << endl << expr->toString(indent+1);
+    printIndent(ss, indent);
+    ss << "THEN:" << endl << stm->toString(indent+1);
+    printIndent(ss, indent);
+    ss << "END WHILE" << endl;
+    return ss.str();
+}
+
+WhileSN::~WhileSN() {
+    delete expr;
+    delete stm;
+}
 
 void VarDeclSN::appendChild(SyntaxNode* child) {
     assignements.push_back(child);

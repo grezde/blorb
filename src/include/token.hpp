@@ -14,9 +14,9 @@ struct Token {
         " NEGATE", " AND OP", " OR OP"
     };
 
-    static const int KEYWORDSN = 5;
+    static const int KEYWORDSN = 6;
     static constexpr const char* KEYWORDS[] = {
-        "var", "print", "scan", "if", "else"
+        "var", "print", "scan", "if", "else", "while"
     };
     
     enum Type {

@@ -13,7 +13,10 @@ build: $(OBJECTS)
 clean:
 	rm -rf temp
 
-run:
+run-%: examples/%.txt
+	./blorbc $<
+
+build-%: examples/%.txt
 	clear
 	make build
-	./blorbc examples/test.txt
+	./blorbc $<

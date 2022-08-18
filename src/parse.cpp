@@ -183,19 +183,18 @@ namespace parse {
     }
 
     SyntaxNode* ifElseStm(Tokens tokens, int& index) {
-        int index0 = index;
         if(!(tokens[index].type == Token::KEYWORD && tokens[index].text == string("if")))
             return ExpectedSyntaxError("'if' keyword in if statement", tokens[index], index);
         index++;
         if(tokens[index].type != Token::O_PAREN)
-            return ExpectedSyntaxError("open parenthesis keyword in if statement", tokens[index], index);
+            return ExpectedSyntaxError("open parenthesis in if statement", tokens[index], index);
         index++;
         SyntaxNode* expr = expression(tokens, index);
         if(expr->type == SyntaxNode::ERROR)
             return expr;
         if(tokens[index].type != Token::C_PAREN) {
             delete expr;
-            return ExpectedSyntaxError("closing parenthesis keyword in if statement", tokens[index], index);
+            return ExpectedSyntaxError("closing parenthesis in if statement", tokens[index], index);
         }
         index++;
         SyntaxNode* stm = statement(tokens, index);
@@ -204,14 +203,39 @@ namespace parse {
             return stm;
         }
         if(!(tokens[index].type == Token::KEYWORD && tokens[index].text == string("else")))
-            return new IfElseSN(expr, stm, index0);
+            return new IfElseSN(expr, stm);
         index++;
         SyntaxNode* stm2 = statement(tokens, index);
         if(stm2->type == SyntaxNode::ERROR) {
             delete expr; delete stm;
             return stm2;
         }
-        return new IfElseSN(expr, stm, stm2, index0);
+        return new IfElseSN(expr, stm, stm2);
+    }
+
+    SyntaxNode* whileStm(Tokens tokens, int& index) {
+        int index0 = index;
+        if(!(tokens[index].type == Token::KEYWORD && tokens[index].text == string("while")))
+            return ExpectedSyntaxError("'while' keyword in while statement", tokens[index], index);
+        index++;
+        if(tokens[index].type != Token::O_PAREN)
+            return ExpectedSyntaxError("open parenthesis in while statement", tokens[index], index);
+        index++;
+        SyntaxNode* expr = expression(tokens, index);
+        if(expr->type == SyntaxNode::ERROR)
+            return expr;
+        if(tokens[index].type != Token::C_PAREN) {
+            delete expr;
+            return ExpectedSyntaxError("closing parenthesis in while statement", tokens[index], index);
+        }
+        index++;
+        SyntaxNode* stm = statement(tokens, index);
+        if(stm->type == SyntaxNode::ERROR) {
+            delete expr;
+            return stm;
+        }
+        WhileSN* sn = new WhileSN(expr, stm);
+        return sn;
     }
 
     SyntaxNode* statement(Tokens tokens, int& index) {
@@ -222,9 +246,10 @@ namespace parse {
                 return scanStm(tokens, index);
             if(tokens[index].text == string("print"))
                 return printStm(tokens, index);
-            cout << tokens[index].text << endl;
             if(tokens[index].text == string("if")) 
                 return ifElseStm(tokens, index);
+            if(tokens[index].text == string("while")) 
+                return whileStm(tokens, index);
             osstream ss;
             ss << "Unexpected keyword '" << tokens[index].text << "' at the beggining of statement";
             return new TextualSN(SyntaxNode::ERROR, ss.str(), index);
@@ -246,7 +271,9 @@ namespace parse {
     }
 
     SyntaxNode* statements(Tokens tokens, int& index, Token::Type endingToken) {
+        static int indent = 0;
         ListSN* ns = new ListSN(SyntaxNode::STM_LIST, index);
+        indent++;
         while(tokens[index].type != endingToken) {
             SyntaxNode* sn = statement(tokens, index);
             if(sn->type == SyntaxNode::ERROR) {
@@ -256,6 +283,7 @@ namespace parse {
             ns->appendChild(sn);
         }
         index++;
+        indent--;
         return ns;
     }
 

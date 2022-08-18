@@ -1,5 +1,6 @@
 #include "file.hpp"
 #include <fstream>
+#include "typecheck.hpp"
 #include "eval.hpp"
 
 string* File::readContents(const string& filename) {
@@ -59,11 +60,20 @@ File::File(const string filename)
     fout << "-- SYNTAX TREE --" << endl;
     fout << tree->toString() << std::endl;
 
-    EvalContext ctx;
-    ctx.error = nullptr;
-    eval::statement(ctx, tree);
-    if(ctx.error != nullptr)
-        cout << "EVALUATION ERROR: " << ctx.error->msg << endl;
+    SemanticContext sctx;
+    typecheck::statement(sctx, tree);
+    if(sctx.ers.size() > 0) {
+        for(SemanticContext::Error er : sctx.ers)
+            cout << er.msg << endl;
+        return;
+    }
+    
+    EvalContext ectx;
+    ectx.error = nullptr;
+    eval::statement(ectx, tree);
+    if(ectx.error != nullptr)
+        cout << "EVALUATION ERROR: " << ectx.error->msg << endl;
+    
 
 }
 

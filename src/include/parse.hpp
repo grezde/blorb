@@ -1,3 +1,4 @@
+#pragma once
 #include "syntax.hpp"
 
 namespace parse {
@@ -16,6 +17,7 @@ namespace parse {
     SyntaxNode* scanStm(Tokens tokens, int& index);
     SyntaxNode* compoundStm(Tokens tokens, int& index);
     SyntaxNode* ifElseStm(Tokens tokens, int& index);
+    SyntaxNode* whileStm(Tokens tokens, int& index);
 
     SyntaxNode* statement(Tokens tokens, int& index);
     SyntaxNode* statements(Tokens tokens, int& index, Token::Type endingToken);

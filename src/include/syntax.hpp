@@ -40,14 +40,23 @@ struct SyntaxNode {
 SyntaxNode* ExpectedSyntaxError(string what, const Token& token, int startPos, int endPos);
 SyntaxNode* ExpectedSyntaxError(string what, const Token& token, int pos);
 
+struct WhileSN : SyntaxNode {
+    SyntaxNode* expr;
+    SyntaxNode* stm;
+    WhileSN(SyntaxNode* expr, SyntaxNode* stm) 
+        : SyntaxNode(SyntaxNode::WHILE, expr->startPos-2, stm->endPos), expr(expr), stm(stm) {};
+    ~WhileSN();
+    string toString(int indent = 0);
+};
+
 struct IfElseSN : SyntaxNode {
     SyntaxNode* expr;
     SyntaxNode* ifStm;
     SyntaxNode* elseStm;
-    IfElseSN(SyntaxNode* expr, SyntaxNode* ifStm, int index) 
-        : SyntaxNode(SyntaxNode::IF_ELSE, index, ifStm->endPos), expr(expr), ifStm(ifStm), elseStm(nullptr) {};
-    IfElseSN(SyntaxNode* expr, SyntaxNode* ifStm, SyntaxNode* elseStm, int index) 
-        : SyntaxNode(SyntaxNode::IF_ELSE, index, elseStm->endPos), expr(expr), ifStm(ifStm), elseStm(elseStm) {};
+    IfElseSN(SyntaxNode* expr, SyntaxNode* ifStm) 
+        : SyntaxNode(SyntaxNode::IF_ELSE, expr->startPos-2, ifStm->endPos), expr(expr), ifStm(ifStm), elseStm(nullptr) {};
+    IfElseSN(SyntaxNode* expr, SyntaxNode* ifStm, SyntaxNode* elseStm) 
+        : SyntaxNode(SyntaxNode::IF_ELSE, expr->startPos-2, elseStm->endPos), expr(expr), ifStm(ifStm), elseStm(elseStm) {};
     ~IfElseSN();
     string toString(int indent = 0);
 };

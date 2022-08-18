@@ -1,0 +1,22 @@
+#!../blorbc
+# This file prints the first N Fibonacci numbers
+
+char endl = '\n';
+string sp = " ";
+int32 numf;
+print "Number of Fibonacci numbers: ";
+scan numf;
+if(numf >= 50 || numf <= 1)
+    print "Number outside of range", endl;
+else {
+    int64 a = 1;
+    int64 b = 0;
+    while(numf > 0) {
+        print a, sp;
+        int64 c = a+b;
+        b = a;
+        a = c;
+        numf = numf - 1;
+    }
+    print endl;
+}
