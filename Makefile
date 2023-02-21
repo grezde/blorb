@@ -20,3 +20,6 @@ build-%: examples/%.txt
 	clear
 	make build
 	./blorbc $<
+
+loc:
+	printf 'Lines of code: ' ; cat src/*.cpp src/include/*.hpp | wc -l

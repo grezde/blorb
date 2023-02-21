@@ -63,6 +63,10 @@ namespace typecheck {
             varDeclStm(ctx, tree);
         else if(tree->type == SyntaxNode::VAR_SET)
             varSetStm(ctx, tree);
+        else if(tree->type == SyntaxNode::STM_EXPR) {
+            OneChildSN* sn = (OneChildSN*)tree;
+            expression(ctx, sn->child);
+        }
         else if(tree->type == SyntaxNode::STM_PRINT) {
             ListSN* sn = (ListSN*)tree;
             for(SyntaxNode* child : sn->children) {
@@ -118,7 +122,11 @@ namespace typecheck {
             TypeInfo* val = expression(ctx, sn->inside);
             if(val == nullptr)
                 return nullptr;
-            TypeInfo* ret = typelogic::canUnaryOp(sn->opType, val);
+            TypeInfo* ret = nullptr;
+            if(UnaryOpSN::isInteractive(sn->opType))
+                ret = typelogic::canUnaryOpInt(sn->opType, val);
+            else
+                ret = typelogic::canUnaryOp(sn->opType, val);
             if(ret != nullptr)
                 return val;
             ctx.ers.push_back(SemanticContext::Error(string("Cannot apply unary operator to variable of type ") + val->name, tree));
@@ -130,7 +138,11 @@ namespace typecheck {
             TypeInfo* second = expression(ctx, sn->second);
             if(first == nullptr || second == nullptr)
                 return nullptr;
-            TypeInfo* ret = typelogic::canBinaryOp(sn->opType, first, second);
+            TypeInfo* ret = nullptr;
+            if(BinaryOpSN::isInteractive(sn->opType))
+                ret = typelogic::canBinaryOpInt(sn->opType, first, second);
+            else
+                ret = typelogic::canBinaryOp(sn->opType, first, second);
             if(ret != nullptr)
                 return ret;
             ctx.ers.push_back(SemanticContext::Error(string("Cannot apply binary operator"), tree));

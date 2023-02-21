@@ -12,7 +12,8 @@ namespace parse {
 
     SyntaxNode* varSet(Tokens tokens, int& index);
     SyntaxNode* varDeclStm(Tokens tokens, int& index);
-    SyntaxNode* varSetStm(Tokens tokens, int& index);
+    //SyntaxNode* varSetStm(Tokens tokens, int& index);
+    SyntaxNode* exprStm(Tokens tokens, int& index);
     SyntaxNode* printStm(Tokens tokens, int& index);
     SyntaxNode* scanStm(Tokens tokens, int& index);
     SyntaxNode* compoundStm(Tokens tokens, int& index);

@@ -59,6 +59,7 @@ File::File(const string filename)
     tree = parse::file(tokens);
     fout << "-- SYNTAX TREE --" << endl;
     fout << tree->toString() << std::endl;
+    fout.close();
 
     SemanticContext sctx;
     typecheck::statement(sctx, tree);
@@ -74,7 +75,6 @@ File::File(const string filename)
     if(ectx.error != nullptr)
         cout << "EVALUATION ERROR: " << ectx.error->msg << endl;
     
-
 }
 
 File::~File() {

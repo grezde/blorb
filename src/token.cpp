@@ -117,24 +117,62 @@ Token Token::next(const string& input, int& index) {
             }
     }
     else if(input[index] == '+') {
-        a.type = PLUS;
-        a.text = "+";
-        index++;
+        if(input[index+1] == '+') {
+            a.type = PLUSPLUS;
+            a.text = "++";
+            index+=2;
+        }
+        else if(input[index+1] == '=') {
+            a.type = PLUS_EQ;
+            a.text = "+=";
+            index+=2;
+        }
+        else {
+            a.type = PLUS;
+            a.text = "+";
+            index++;
+        }
     }
     else if(input[index] == '-') {
-        a.type = MINUS;
-        a.text = "-";
-        index++;
+        if(input[index+1] == '-') {
+            a.type = MINUSMINUS;
+            a.text = "--";
+            index+=2;
+        }
+        else if(input[index+1] == '=') {
+            a.type = MINUS_EQ;
+            a.text = "-=";
+            index+=2;
+        }
+        else {
+            a.type = MINUS;
+            a.text = "-";
+            index++;
+        }
     }
     else if(input[index] == '*') {
-        a.type = STAR;
-        a.text = "*";
-        index++;
+        if(input[index+1] == '=') {
+            a.type = STAR_EQ;
+            a.text = "*=";
+            index+=2;
+        }
+        else {
+            a.type = STAR;
+            a.text = "*";
+            index++;
+        }
     }
     else if(input[index] == '/') {
-        a.type = DIV;
-        a.text = "/";
-        index++;
+        if(input[index+1] == '=') {
+            a.type = DIV_EQ;
+            a.text = "/=";
+            index += 2;
+        }
+        else {
+            a.type = DIV;
+            a.text = "/";
+            index++;
+        }
     }
     else if(input[index] == '(') {
         a.type = O_PAREN;
@@ -210,6 +248,16 @@ Token Token::next(const string& input, int& index) {
             a.text = "!";
             index++;
         }
+    }
+    else if(input[index] == '[') {
+        a.type = O_SQUARE;
+        a.text = "[";
+        index++;
+    }
+    else if(input[index] == ']') {
+        a.type = C_SQUARE;
+        a.text = "]";
+        index++;
     }
     else {
         a.text = "Unexpected character '";

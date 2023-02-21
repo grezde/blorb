@@ -100,6 +100,18 @@ TypeInfo* SemanticContext::getType(string name) {
     return nullptr;
 }
 
+TypeInfo* SemanticContext::getTypeTree(SyntaxNode* sn) {
+    if(sn->type == SyntaxNode::TYPE_NAME)
+        return getType((TextualSN*)a->text);
+    if(sn->type == SyntaxNode::TYPE_UN_OP) {
+        UnaryTypeOpSN* node = (UnaryTypeOpSN*)sn;
+        TypeInfo* tt = getTypeTree(node->inside);
+        if(tt == nullptr)
+            return nullptr;
+        return new ArrayTypeInfo(tt);
+    } 
+}
+
 void SemanticContext::pushScope() {
     scopes.push_back(SemanticScope());
 }

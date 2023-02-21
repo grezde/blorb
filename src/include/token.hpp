@@ -9,9 +9,14 @@ struct Token {
         " PLUS", " MINUS", " STAR", " DIV", 
         " OPEN PAREN", " CLOSING PAREN", 
         " OPEN CURLY", " CLOSING CURLY",
+        " OPEN SQUARE", " CLOSING SQUARE",
         " EQUALS", " SEMICOLON", " COMMA",
         " COMPARE", " LESS THAN", " LESS OR EQUAL", " GREATER THAN", " GREATER OR EQUAL", " NOT EQUAL",
-        " NEGATE", " AND OP", " OR OP"
+        " NEGATE", " AND OP", " OR OP",
+        " PLUS EQUAL", " MINUS EQUAL", " STAR EQUAL", " DIV EQUAL",
+        " INCREMENT", " DECREMENT",
+        " INCREMENT PREFIX", " DECREMENT PREFIX",
+        " INCREMENT POSTFIX", " DECTREMENT POSTFIX"
     };
 
     static const int KEYWORDSN = 6;
@@ -25,9 +30,14 @@ struct Token {
         PLUS, MINUS, STAR, DIV,
         O_PAREN, C_PAREN,
         O_CURLY, C_CURLY,
+        O_SQUARE, C_SQUARE,
         EQ, SC, COMMA,
         EQEQ, LT, LEQ, GT, GEQ, NEQ,
-        NEGATE, ANDAND, OROR
+        NEGATE, ANDAND, OROR,
+        PLUS_EQ, MINUS_EQ, STAR_EQ, DIV_EQ,
+        PLUSPLUS, MINUSMINUS,
+        PLUSPLUS_PREF, MINUSMINUS_PREF,
+        PLUSPLUS_POST, MINUSMINUS_POST
     };
 
     Type type;

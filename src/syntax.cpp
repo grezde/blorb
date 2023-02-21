@@ -77,6 +77,14 @@ string UnaryOpSN::toString(int indent) {
     return ss.str();
 }
 
+string UnaryTypeOpSN::toString(int indent) {
+    osstream ss;
+    printIndent(ss, indent);
+    ss << "UNARY TYPE OPERATOR\n";
+    ss << inside->toString(indent+1);
+    return ss.str();
+}
+
 string VarDeclSN::toString(int indent) {
     osstream ss;
     printIndent(ss, indent);
@@ -84,6 +92,8 @@ string VarDeclSN::toString(int indent) {
     ss << typexp->toString(indent+1);
     for(SyntaxNode* sn : assignements)
         ss << sn->toString(indent+1);
+    printIndent(ss, indent);
+    ss << "END VAR DECL" << std::endl;
     return ss.str();
 }
 
@@ -152,40 +162,60 @@ BinaryOpSN::~BinaryOpSN() {
 
 int BinaryOpSN::precedence(Token::Type op) {
     switch(op) {
-        case Token::ANDAND: 
+        case Token::PLUS_EQ: case Token::MINUS_EQ:
+        case Token::STAR_EQ: case Token::DIV_EQ:
+        case Token::EQ:
             return 1;
         case Token::OROR:
             return 2;
-        case Token::EQEQ:  case Token::NEQ:
+        case Token::ANDAND: 
             return 3;
+        case Token::EQEQ:  case Token::NEQ:
+            return 4;
         case Token::LEQ:   case Token::GEQ:
         case Token::LT:    case Token::GT:
-            return 4;
-        case Token::PLUS:  case Token::MINUS:
             return 5;
-        case Token::STAR:  case Token::DIV:
+        case Token::PLUS:  case Token::MINUS:
             return 6;
+        case Token::STAR:  case Token::DIV:
+            return 7;
         default:
             return -1;
     }
 }
 bool BinaryOpSN::associativity(Token::Type op) {
-    switch(op) {
-        case Token::PLUS: case Token::MINUS:
-        case Token::STAR: case Token::DIV:
-        case Token::LEQ:  case Token::GEQ:
-        case Token::LT:   case Token::GT:
-        case Token::EQEQ: case Token::NEQ:
+    int p = precedence(op);
+    switch(p) {
+        case 1:
+            return false;
+        case 2: case 3: case 4:
+        case 5: case 6: case 7:
             return true;
         default:
             return false;
     }
 }
-bool BinaryOpSN::isBinaryOp(Token::Type op) {
-    return 
-        op == Token::EQEQ || op == Token::NEQ || 
-        op == Token::GT   || op == Token::LT  ||
-        op == Token::GEQ  || op == Token::LEQ;
+bool BinaryOpSN::isBooleanOp(Token::Type op) {
+    switch(op) {
+        case Token::EQEQ: case Token::NEQ:
+        case Token::GT:   case Token::LT:
+        case Token::GEQ:  case Token::LEQ:
+            return true;
+        default:
+            return false;
+    }
+}
+bool BinaryOpSN::isInteractive(Token::Type op) {
+    switch(op) {
+        case Token::EQ:  
+        case Token::PLUS_EQ: case Token::MINUS_EQ:
+        case Token::STAR_EQ: case Token::DIV_EQ:
+        case Token::PLUSPLUS_PREF: case Token::MINUSMINUS_PREF:
+        case Token::PLUSPLUS_POST: case Token::MINUSMINUS_POST:
+            return true;
+        default:
+            return false;
+    }
 }
 
 UnaryOpSN::UnaryOpSN(Token::Type opType, SyntaxNode* inside, bool prefix)
@@ -198,10 +228,22 @@ UnaryOpSN::~UnaryOpSN() {
 
 int UnaryOpSN::precedence(Token::Type op) {
     switch(op) {
+        case Token::PLUSPLUS_PREF: case Token::MINUSMINUS_PREF:
         case Token::PLUS: case Token::MINUS:
         case Token::NEGATE:
             return 1;
+        case Token::PLUSPLUS_POST: case Token::MINUSMINUS_POST:
+            return 2;
         default:
             return -1;
+    }
+}
+bool UnaryOpSN::isInteractive(Token::Type op) {
+    switch(op) {
+        case Token::PLUSPLUS_POST: case Token::PLUSPLUS_PREF:
+        case Token::MINUSMINUS_POST: case Token::MINUSMINUS_PREF:
+            return true;
+        default:
+            return false;
     }
 }

@@ -6,8 +6,14 @@ namespace parse {
         if(tokens[index].type != Token::IDENTIFIER)
             return ExpectedSyntaxError("a type name", tokens[index], index);
         TextualSN* a = new TextualSN(SyntaxNode::TYPE_NAME, tokens[index].text, index);
-        index++;
-        return a;
+        if(index + 2 < tokens.size() && tokens[index+1].type == Token::O_SQUARE && tokens[index+2].type == Token::C_SQUARE) {
+            index += 3;
+            return new UnaryTypeOpSN(UnaryTypeOpSN::M_ARRAY, a);
+        }
+        else {
+            index++;
+            return a;
+        }
     }
 
     SyntaxNode* expression(Tokens tokens, int& index) {
@@ -142,6 +148,19 @@ namespace parse {
         return sn;
     }
 
+    SyntaxNode* exprStm(Tokens tokens, int& index) {
+        int index0 = index;
+        SyntaxNode* expr = expression(tokens, index);
+        if(expr->type == SyntaxNode::ERROR)
+            return expr;
+        if(tokens[index].type != Token::SC) {
+            delete expr;
+            return ExpectedSyntaxError("SEMICOLON (;) token after expression in statement", tokens[index], index0, index);
+        }
+        index++;
+        return new OneChildSN(SyntaxNode::STM_EXPR, expr, index0, index);
+    }
+
     SyntaxNode* printStm(Tokens tokens, int& index) {
         if(!(tokens[index].type == Token::KEYWORD && tokens[index].text == string("print")))
             return ExpectedSyntaxError("'print' keyword in print statement", tokens[index], index);
@@ -257,7 +276,7 @@ namespace parse {
         if(tokens[index].type == Token::O_CURLY)
             return compoundStm(tokens, index);
         int index0 = index;
-        SyntaxNode* sn = varSetStm(tokens, index);
+        SyntaxNode* sn = exprStm(tokens, index);
         if(sn->type != SyntaxNode::ERROR)
             return sn;
         delete sn;

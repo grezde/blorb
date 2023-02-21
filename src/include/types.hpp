@@ -34,6 +34,14 @@ struct RefTypeInfo : TypeInfo {
     void* copyInstance(void* v) { return v; };
 };
 
+struct ArrayTypeInfo : TypeInfo {
+    TypeInfo* atype;
+    ListTypeInfo(TypeInfo* atype) : TypeInfo(TypeInfo::M_ARRAY, atype->name+string("[]"), sizeof(void*)), atype(atype) {};
+    void deleteInstance(void* v) {};
+    void* newInstance() { return nullptr; };
+    void* copyInstance(void* v) { return v; };
+};
+
 struct PrimitiveTypeInfo : TypeInfo {
     enum PrimitiveType {
         INT8,  INT16,  INT32,  INT64,
@@ -85,6 +93,7 @@ struct SemanticContext {
     SemanticContext();
     TypeInfo* getVariable(string name);
     TypeInfo* getType(string name);
+    TypeInfo* getTypeTree(SyntaxNode* name);
     bool hasVarLastScope(string name);
     void createVar(TypeInfo* ti, string name);
     void pushScope();

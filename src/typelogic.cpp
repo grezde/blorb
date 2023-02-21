@@ -174,6 +174,43 @@ namespace typelogic {
         }
     }
 
+    TypeInfo* canUnaryOpInt(Token::Type opType, TypeInfo* ti) {
+        if(ti->type != TypeInfo::M_REF)
+            return nullptr;
+        if(ti->asRef()->atype->type != TypeInfo::PRIMITIVE)
+            return nullptr;
+        PrimitiveTypeInfo* tt = ti->asRef()->atype->asPrimitive();
+        if(tt->ptype > PrimitiveTypeInfo::INT64)
+            return nullptr;
+        return tt;
+    }
+
+    Variable unaryOpInt(Token::Type opType, Variable v) {
+        Variable tv = v.unref();
+        PrimitiveTypeInfo* tt = tv.typeinfo->asPrimitive();
+        long long ca = tt->toLL(tv.value);
+        switch(opType) {
+            case Token::MINUSMINUS_PREF: {
+                tt->fromLL(ca-1, tv.value);
+                return tv.copy();
+            }
+            case Token::MINUSMINUS_POST: {
+                Variable rv = tv.copy();
+                tt->fromLL(ca-1, tv.value);
+                return rv;
+            }
+            case Token::PLUSPLUS_PREF: {
+                tt->fromLL(ca+1, tv.value);
+                return tv.copy();
+            }
+            case Token::PLUSPLUS_POST: {
+                Variable rv = tv.copy();
+                tt->fromLL(ca+1, tv.value);
+                return rv;
+            }
+        }
+    }
+
     TypeInfo* canBinaryOp(Token::Type opType, TypeInfo* first, TypeInfo* second) {
         if(first->type == TypeInfo::M_REF)
             return canBinaryOp(opType, first->asRef()->atype, second);
@@ -280,7 +317,7 @@ namespace typelogic {
         }
         if(ta->ptype < 4 && tb->ptype < 4) {
             long long ca = ta->toLL(a.value), cb = tb->toLL(b.value), cc;
-            if(BinaryOpSN::isBinaryOp(opType)) {
+            if(BinaryOpSN::isBooleanOp(opType)) {
                 Variable v(boolType);
                 bool res;
                 switch(opType) {
@@ -306,6 +343,73 @@ namespace typelogic {
                 cc = ca/cb;
             tc->fromLL(cc, v.value);
             return v;        
+        }
+    }
+
+    TypeInfo* canBinaryOpInt(Token::Type opType, TypeInfo* first, TypeInfo* second) {
+        if(second->type == TypeInfo::M_REF)
+            return canBinaryOpInt(opType, first, second->asRef()->atype);
+        if(first->type != TypeInfo::M_REF)
+            return nullptr;
+        if(first->asRef()->atype->type != TypeInfo::PRIMITIVE || second->type != TypeInfo::PRIMITIVE)
+            return nullptr;
+        PrimitiveTypeInfo* au = first->asRef()->atype->asPrimitive();
+        PrimitiveTypeInfo* bu = second->asPrimitive();
+        if(opType == Token::EQ)
+            return canCoerce(bu, au) ? au : nullptr;
+        if(opType == Token::PLUS_EQ && au->ptype == PrimitiveTypeInfo::STRING)
+            if(bu->ptype == PrimitiveTypeInfo::CHAR || bu->ptype == PrimitiveTypeInfo::STRING)
+                return au;
+        if(au->ptype <= PrimitiveTypeInfo::INT64 && bu->ptype <= PrimitiveTypeInfo::INT64)
+            return au;
+        return nullptr;
+    }
+
+    Variable binaryOpInt(Token::Type opType, Variable a, Variable b) {
+        if(b.typeinfo->type == TypeInfo::M_REF)
+            return binaryOpInt(opType, a, b.unref());
+        if(opType == Token::EQ) {
+            Variable c = coerce(b, a.unref().typeinfo);
+            a.unref().copyFrom(c.value);
+            return c;
+        }
+        PrimitiveTypeInfo* au = a.unref().typeinfo->asPrimitive();
+        if(au->ptype == PrimitiveTypeInfo::STRING) {
+            if(b.typeinfo->asPrimitive()->ptype == PrimitiveTypeInfo::CHAR) {
+                char c = *(char*)b.value;
+                string* s = (string*)a.unref().value;
+                s->append(1, c);
+            }
+            if(b.typeinfo->asPrimitive()->ptype == PrimitiveTypeInfo::STRING) {
+                const string s1 = *(const string*)b.value;
+                string* s2 = (string*)a.unref().value;
+                s2->append(s1);
+            }
+            return a.unref().copy();
+        }
+        if(au->ptype <= PrimitiveTypeInfo::INT64 && b.typeinfo->asPrimitive()->ptype <= PrimitiveTypeInfo::INT64) {
+            switch(opType) {
+                case Token::PLUS_EQ: {
+                    Variable c = binaryOp(Token::PLUS, a.unref(), b);
+                    a.unref().copyFrom(c.value);
+                    return c;
+                }
+                case Token::MINUS_EQ: {
+                    Variable c = binaryOp(Token::MINUS, a.unref(), b);
+                    a.unref().copyFrom(c.value);
+                    return c;
+                }
+                case Token::STAR_EQ: {
+                    Variable c = binaryOp(Token::STAR, a.unref(), b);
+                    a.unref().copyFrom(c.value);
+                    return c;
+                }
+                case Token::DIV_EQ: {
+                    Variable c = binaryOp(Token::DIV, a.unref(), b);
+                    a.unref().copyFrom(c.value);
+                    return c;
+                }
+            }
         }
     }
 

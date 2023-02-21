@@ -1,33 +1,11 @@
 
+int32 q = -32;
 char endl = '\n';
-print 5, endl;
+print q, endl;
 
-int32 numf = 50;
-int64 a = 1;
-int64 b = 0;
-while(numf > 0) {
-    print a, endl;
-    int64 c = a+b;
-    b = a;
-    a = c;
-    numf = numf-1;
-}
-# print '\n';
+int32[] a = 'a';
+int32[] b = 'b';
 
-# char endl = '\n';
-# 
-# int32 a;
-# scan a;
-# if(a == 1)
-#     print "ONE!!\n";
-# else {
-#     char c;
-#     print "Would you like to try again? (y/n) ";
-#     scan c;
-#     if(c == 'y')
-#         print "Ok, time to implement while loops", endl;
-#     else if(c == 'n')
-#         print "Ok, bye, bye", endl;
-#     else
-#         print "Invalid character. Auto destruct", endl; 
-# }
+print a, endl;
+print a+b, endl;
+# print a[3]+b[2], endl;

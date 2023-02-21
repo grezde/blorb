@@ -1,17 +1,41 @@
 
 # Main ideas
 
+```
+typeclass functor f {
+    () map;
+};
+
+type maybe<any a> = nothing | just(a);
+
+any a :: self maybe<a> -> a unwrap = m => {
+    match(m) {
+        nothing : throw "Undefined";
+        just(v) : return v;
+    }
+};
+
+any a :: self maybe<a> -> maybe<a> map = m => {
+    match(m) {
+        nothing : return nothing
+    }
+}
+
+
+```
+
 ````
 # Autodefs
 var console: {
     readln: () -> string,
     readWord: () -> string,
     readChar: () -> char,
-    print: <printable a> a -> (),
-    println: <printable a> a -> ()
+    read: readable a :: () -> a,
+    print: printable a :: a -> (),
+    println: printable a :: a -> ()
 };
 
-var compute: <integer i> (i, i) -> i = (a, b) => 2*a-b;
+var compute: integer i :: (i, i) -> i = (a, b) => 2*a-b;
 
 var calculate: <integer i> () -> [i] = () => {
     var ns: [i] = [];

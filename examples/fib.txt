@@ -1,4 +1,4 @@
-#!../blorbc
+#!/home/grezde/info/projects/blorb/blorbc
 # This file prints the first N Fibonacci numbers
 
 char endl = '\n';
@@ -9,11 +9,11 @@ scan numf;
 if(numf >= 50 || numf <= 1)
     print "Number outside of range", endl;
 else {
-    int64 a = 1;
-    int64 b = 0;
+    int32 a = 1;
+    int32 b = 0;
     while(numf > 0) {
         print a, sp;
-        int64 c = a+b;
+        int32 c = a+b;
         b = a;
         a = c;
         numf = numf - 1;

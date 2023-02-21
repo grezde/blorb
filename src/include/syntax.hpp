@@ -8,7 +8,7 @@ struct SyntaxNode {
         "PRINT", "SCAN", "VAR SET", "VAR DECL", 
         "BIN OP", "UN OP", 
         "NUMBER", "CHAR", "STRING",
-        "VAR", "TYPENAME", "IF-ELSE", "WHILE"
+        "VAR", "TYPENAME", "IF-ELSE", "WHILE", "EXPRESSION"
     };
     static void printIndent(std::ostream& ss, int indent);
 
@@ -21,13 +21,16 @@ struct SyntaxNode {
         VAR_DECL,        // VarDecl
         EXPR_BIN_OP,     // BinaryOp
         EXPR_UN_OP,      // UnaryOp
+        TYPE_UN_OP,      // UnaryTypeOp
+        TYPE_BIN_OP,     // BinaryTypeOp
         EXPR_NUM_LIT,    // Textual
         EXPR_CHAR_LIT,   // Textual
         EXPR_STRING_LIT, // Textual
         EXPR_VAR,        // Textual
         TYPE_NAME,       // Textual
         IF_ELSE,         // IfElse
-        WHILE            // While
+        WHILE,           // While
+        STM_EXPR         // OneChild
     };
     Type type;
     int startPos, endPos;
@@ -108,6 +111,7 @@ struct UnaryOpSN : SyntaxNode {
     ~UnaryOpSN();
     string toString(int indent = 0);
     static int precedence(Token::Type op);
+    static bool isInteractive(Token::Type op);
 };
 
 struct BinaryOpSN : SyntaxNode {
@@ -120,5 +124,18 @@ struct BinaryOpSN : SyntaxNode {
     static const int MAX_PRECEDENCE = 3;
     static int precedence(Token::Type op);
     static bool associativity(Token::Type op);
-    static bool isBinaryOp(Token::Type op);
+    static bool isBooleanOp(Token::Type op);
+    static bool isInteractive(Token::Type op);
+};
+
+struct UnaryTypeOpSN : SyntaxNode {
+    enum OpType {
+        M_ARRAY, M_OTHER
+    };
+    OpType opType;
+    SyntaxNode* inside;
+    // TODO: unhard code this later
+    UnaryTypeOpSN(OpType opType, SyntaxNode* inside) : SyntaxNode(SyntaxNode::TYPE_UN_OP, inside->startPos, inside->endPos+2), opType(opType), inside(inside) {};
+    ~UnaryTypeOpSN() { delete inside; };
+    string toString(int indent = 0);
 };

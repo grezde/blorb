@@ -90,6 +90,8 @@ namespace eval {
             ifElseStm(ctx, tree);
         else if(tree->type == SyntaxNode::WHILE)
             whileStm(ctx, tree);
+        else if(tree->type == SyntaxNode::STM_EXPR)
+            expression(ctx, ((OneChildSN*)tree)->child).free();
         else if(tree->type == SyntaxNode::STM_LIST) {
             ListSN* sn = (ListSN*)tree;
             ctx.pushScope();
@@ -129,7 +131,11 @@ namespace eval {
             Variable val = expression(ctx, sn->inside);
             if(ctx.error != nullptr)
                 return Variable();
-            Variable res = typelogic::unaryOp(sn->opType, val);
+            Variable res;
+            if(UnaryOpSN::isInteractive(sn->opType))
+                res = typelogic::unaryOpInt(sn->opType, val);
+            else
+                res = typelogic::unaryOp(sn->opType, val);
             val.free();
             return res;
         } 
@@ -139,7 +145,13 @@ namespace eval {
             if(ctx.error != nullptr)
                 return Variable();
             Variable second = expression(ctx, sn->second);
-            Variable res = typelogic::binaryOp(sn->opType, first, second);
+            if(ctx.error != nullptr)
+                return Variable();
+            Variable res;
+            if(BinaryOpSN::isInteractive(sn->opType))
+                res = typelogic::binaryOpInt(sn->opType, first, second);
+            else
+                res = typelogic::binaryOp(sn->opType, first, second);
             first.free();
             second.free();
             return res;
